@@ -47,6 +47,13 @@
   - **File**: src/components/Footer.tsx
   - **Date**: 2025-10-03
 
+- [x] **Removed Resources and Legal sections from Footer**
+  - **Problem**: User requested removal of Resources (GitHub, Documentation, Twitter) and Legal (Contact, License) sections
+  - **Solution**: Simplified footer grid from 4 columns to 2 columns, keeping only branding and Product sections
+  - **File**: src/components/Footer.tsx
+  - **Sections removed**: Resources (GitHub, Documentation, Twitter), Legal (Contact, License)
+  - **Date**: 2025-10-03
+
 - [x] **Fixed TypeScript type instantiation error in supabase.ts**
   - **Problem**: `Type instantiation is excessively deep and possibly infinite` error at line 160
   - **Root cause**: Code was trying to query a 'samples' table that doesn't exist in the database schema
