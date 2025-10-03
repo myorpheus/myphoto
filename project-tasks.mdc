@@ -68,6 +68,27 @@
   - **Frontend requirement**: Pass `app_source: 'myphoto'` in signup metadata
   - **Date**: 2025-10-03
 
+- [x] **Implemented secure 4-tier user roles system**
+  - **Problem**: Need proper role-based access control with 4 roles: super_admin, admin, creator, user
+  - **Solution**: Created separate user_roles table with security definer functions to prevent RLS recursion
+  - **Details**:
+    - Created `app_role` enum: super_admin, admin, creator, user
+    - Created `user_roles` table with proper RLS policies (roles stored separately for security)
+    - Added `has_role(_user_id, _role)` security definer function for role checks
+    - Added `is_admin_role()` helper function for admin checks
+    - Updated existing `is_admin()` function to use new role system
+    - Created `commission_settings` table for managing creator/user commissions
+    - Set default user commission at 10%
+    - Migrated all existing users to 'user' role
+  - **Role Permissions**:
+    - **super_admin**: Full control including commission rate management
+    - **admin**: User/content management, event oversight
+    - **creator**: Manage courses, events, clubs, view their revenue
+    - **user**: Join clubs, sell products for commission (default 10%)
+  - **Security**: Follows best practices with SECURITY DEFINER functions to prevent privilege escalation
+  - **File**: Database migration
+  - **Date**: 2025-10-03
+
 ### 🔴 CRITICAL ISSUES
 - [ ] **Missing package-lock.json**
   - **Problem**: Project is missing package-lock.json file in root directory
