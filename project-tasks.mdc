@@ -89,6 +89,39 @@
   - **File**: Database migration
   - **Date**: 2025-10-03
 
+- [x] **First user auto-promotion to super_admin**
+  - **Problem**: Need first user to be automatically promoted to super_admin role
+  - **Solution**: Updated `handle_new_user()` trigger to check user count and assign super_admin to first user
+  - **Details**: First user gets super_admin role, all subsequent users get user role by default
+  - **File**: Database migration
+  - **Date**: 2025-10-03
+
+- [x] **Admin Dashboard with role-based access**
+  - **Problem**: Need admin dashboard accessible only to admin and super_admin users
+  - **Solution**: Created AdminDashboard page with authorization checks and role-specific features
+  - **Features**:
+    - Platform statistics (users, events, revenue)
+    - Role-based tabs (Overview, Users, Events)
+    - Super admin exclusive settings tab for commission management
+    - Auto-redirect non-admin users to overview
+    - Navigation link in Overview page for admins
+  - **Files**: 
+    - src/pages/AdminDashboard.tsx
+    - src/pages/Overview.tsx (added admin dashboard link)
+    - src/App.tsx (added /admin route)
+    - src/services/supabase.ts (added getUserRoles, hasRole, isAdmin methods)
+  - **Date**: 2025-10-03
+
+- [x] **Disabled non-existent table methods**
+  - **Problem**: Build errors from referencing models, images, credits tables that don't exist
+  - **Solution**: Commented out all methods related to non-existent tables in supabase.ts
+  - **Affected methods**: createModel, getModel, getUserModels, updateModel, deleteModel, createImage, getModelImages, getUserCredits, updateUserCredits, decrementUserCredits
+  - **Files**: 
+    - src/services/supabase.ts
+    - src/pages/Overview.tsx (simplified to show role info)
+    - src/pages/TrainModel.tsx (simplified to placeholder)
+  - **Date**: 2025-10-03
+
 ### 🔴 CRITICAL ISSUES
 - [ ] **Missing package-lock.json**
   - **Problem**: Project is missing package-lock.json file in root directory
