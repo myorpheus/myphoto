@@ -1,15 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import HeroSection from "@/components/homepage/HeroSection";
-import BrandsSection from "@/components/homepage/BrandsSection";
-import ProcessSection from "@/components/homepage/ProcessSection";
-import FeaturesSection from "@/components/homepage/FeaturesSection";
-import ExamplesSection from "@/components/homepage/ExamplesSection";
-import TestimonialsSection from "@/components/homepage/TestimonialsSection";
-import PricingSection from "@/components/homepage/PricingSection";
-import FAQSection from "@/components/homepage/FAQSection";
-import CTASection from "@/components/homepage/CTASection";
-import Navbar from "@/components/Navbar";
+import { Button } from "@/components/ui/button";
+import { Camera } from "lucide-react";
 import Footer from "@/components/Footer";
 import { supabaseService } from "@/services/supabase";
 
@@ -30,18 +22,48 @@ const Index = () => {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Navbar />
-      <div className="flex-1">
-        <HeroSection />
-        <BrandsSection />
-        <ProcessSection />
-        <FeaturesSection />
-        <ExamplesSection />
-        <TestimonialsSection />
-        <PricingSection />
-        <FAQSection />
-        <CTASection />
-      </div>
+      <header className="border-b">
+        <div className="container flex h-16 items-center justify-between px-4 md:px-6">
+          <div className="flex items-center gap-2 font-bold text-xl">
+            <Camera className="h-5 w-5 text-primary" />
+            <span>Headshots AI</span>
+          </div>
+          <Button onClick={() => navigate('/login')}>
+            Sign In
+          </Button>
+        </div>
+      </header>
+      
+      <main className="flex-1">
+        <section className="container flex flex-col items-center justify-center px-4 py-24 md:px-6 md:py-32">
+          <div className="max-w-3xl text-center space-y-8">
+            <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
+              Professional AI Headshots
+            </h1>
+            <p className="text-xl text-muted-foreground">
+              Create stunning, professional headshots using AI. Upload your photos and let our AI generate high-quality headshots perfect for LinkedIn, resumes, and professional profiles.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                size="lg" 
+                onClick={() => navigate('/login')}
+                className="text-lg px-8"
+              >
+                Get Started
+              </Button>
+              <Button 
+                size="lg" 
+                variant="outline"
+                onClick={() => navigate('/overview')}
+                className="text-lg px-8"
+              >
+                View Dashboard
+              </Button>
+            </div>
+          </div>
+        </section>
+      </main>
+      
       <Footer />
     </div>
   );

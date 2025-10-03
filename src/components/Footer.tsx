@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import { Camera } from "lucide-react";
 
 export default function Footer() {
@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="container px-4 md:px-6">
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-4">
-            <Link href="/" className="flex items-center gap-2 font-bold text-xl">
+            <Link to="/" className="flex items-center gap-2 font-bold text-xl">
               <Camera className="h-5 w-5 text-primary" />
               <span>Headshots AI</span>
             </Link>
@@ -19,19 +19,19 @@ export default function Footer() {
             <h3 className="text-sm font-medium">Product</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   How It Works
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="#examples" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <a href="#examples" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Examples
-                </Link>
+                </a>
               </li>
               <li>
-                <Link href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   Pricing
-                </Link>
+                </a>
               </li>
             </ul>
           </div>
@@ -39,31 +39,34 @@ export default function Footer() {
             <h3 className="text-sm font-medium">Resources</h3>
             <ul className="space-y-2">
               <li>
-                <Link 
+                <a 
                   href="https://github.com/astriaai/headshots-starter" 
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   target="_blank"
+                  rel="noopener noreferrer"
                 >
                   GitHub
-                </Link>
+                </a>
               </li>
               <li>
-                <Link 
+                <a 
                   href="https://docs.astria.ai/docs/api/pack/pack/" 
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   target="_blank"
+                  rel="noopener noreferrer"
                 >
                   Documentation
-                </Link>
+                </a>
               </li>
               <li>
-                <Link 
+                <a 
                   href="https://twitter.com/Astria_AI" 
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   target="_blank"
+                  rel="noopener noreferrer"
                 >
                   Twitter
-                </Link>
+                </a>
               </li>
             </ul>
           </div>
@@ -71,21 +74,22 @@ export default function Footer() {
             <h3 className="text-sm font-medium">Legal</h3>
             <ul className="space-y-2">
               <li>
-                <Link 
+                <a 
                   href="mailto:support@astria.ai" 
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Contact
-                </Link>
+                </a>
               </li>
               <li>
-                <Link 
+                <a 
                   href="https://choosealicense.com/licenses/mit/" 
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   target="_blank"
+                  rel="noopener noreferrer"
                 >
                   License
-                </Link>
+                </a>
               </li>
             </ul>
           </div>
@@ -97,39 +101,24 @@ export default function Footer() {
           <div className="flex items-center gap-4">
             <p className="text-sm text-muted-foreground">
               Open-source powered by{" "}
-              <Link
+              <a
                 href="https://www.astria.ai/"
                 className="text-primary hover:underline"
                 target="_blank"
+                rel="noopener noreferrer"
               >
                 Astria
-              </Link>
+              </a>
               ,{" "}
-              <Link
+              <a
                 href="https://supabase.com/"
                 className="text-primary hover:underline"
                 target="_blank"
+                rel="noopener noreferrer"
               >
                 Supabase
-              </Link>
-              , and{" "}
-              {process.env.DEPLOYMENT_PROVIDER === "replit" ? (
-                <Link
-                  href="https://replit.com/@leap-ai/Headshot-AI-Professional-Headshots-with-Leap-AI"
-                  className="text-primary hover:underline"
-                  target="_blank"
-                >
-                  Replit
-                </Link>
-              ) : (
-                <Link
-                  href="https://vercel.com/"
-                  className="text-primary hover:underline"
-                  target="_blank"
-                >
-                  Vercel
-                </Link>
-              )}
+              </a>
+              , and Lovable
             </p>
           </div>
         </div>

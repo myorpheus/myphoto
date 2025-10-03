@@ -1,0 +1,130 @@
+# Project Tasks & Solutions
+
+## Priority Checklist
+
+### ✅ COMPLETED
+- [x] **Fixed Next.js import error in Footer.tsx**
+  - **Problem**: Footer.tsx was importing `Link` from "next/link" (Next.js) but this is a React/Vite project
+  - **Solution**: 
+    - Changed import to `{ Link }` from "react-router-dom"
+    - Updated internal links from `href` to `to` prop
+    - Changed external links to use `<a>` tags instead of `<Link>`
+    - Added `rel="noopener noreferrer"` for security on external links
+  - **File**: src/components/Footer.tsx
+  - **Date**: 2025-10-03
+
+- [x] **Fixed JSX string syntax errors in multiple pages**
+  - **Problem**: className attributes had escaped quotes (`className=\"...\"`) causing TypeScript parsing errors
+  - **Solution**: Replaced all escaped quotes with proper JSX quotes (`className="..."`)
+  - **Files**: 
+    - src/pages/Login.tsx
+    - src/pages/Overview.tsx
+    - src/pages/TrainModel.tsx
+  - **Date**: 2025-10-03
+
+- [x] **Replaced Index.tsx landing page**
+  - **Problem**: Index.tsx was importing many Next.js homepage components causing build failures
+  - **Solution**: Created a simple React/Vite landing page with authentication redirect
+  - **File**: src/pages/Index.tsx
+  - **Date**: 2025-10-03
+
+- [x] **Removed unused Next.js components**
+  - **Problem**: Many Next.js components in the project were causing TypeScript errors
+  - **Solution**: Deleted all unused Next.js components
+  - **Files Deleted**:
+    - src/components/ModelsTable.tsx
+    - src/components/Navbar.tsx
+    - src/components/PacksGalleryZone.tsx
+    - src/components/TrainModelZone.tsx
+    - src/components/homepage/* (entire directory)
+    - src/components/realtime/* (entire directory)
+  - **Date**: 2025-10-03
+
+- [x] **Database trigger for app-specific user creation**
+  - **Problem**: Need to tag users from 'myphoto' webapp with 'PRu' in appsource column
+  - **Solution**: Updated `handle_new_user()` trigger to check `raw_user_meta_data->>'app_source'` and set appsource accordingly
+  - **File**: supabase/migrations/20251003131257_ba497e4d-5062-4581-bf1c-47a93d1e72a7.sql
+  - **Frontend requirement**: Pass `app_source: 'myphoto'` in signup metadata
+  - **Date**: 2025-10-03
+
+### 🔴 CRITICAL ISSUES
+- [ ] **Missing package-lock.json**
+  - **Problem**: Project is missing package-lock.json file in root directory
+  - **Impact**: Lovable cannot properly run the project
+  - **Solution**: User needs to manually create package-lock.json by running `npm install` in the project root
+  - **Note**: package-lock.json cannot be edited directly by Lovable
+
+### 🟡 PENDING TASKS
+- [ ] **Implement app_source metadata in signup flow**
+  - **Action needed**: Update signup implementation to pass metadata
+  - **Code example**:
+    ```typescript
+    await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          app_source: 'myphoto'
+        }
+      }
+    });
+    ```
+  - **Location**: Wherever signup is implemented in the app
+
+## Common Error Patterns & Solutions
+
+### 1. Import Errors
+**Pattern**: `Failed to resolve import "package/module"`
+**Common causes**:
+- Using Next.js imports in a React/Vite project
+- Missing or incorrect package installation
+- Wrong import path
+
+**Solutions**:
+- For routing: Use `react-router-dom` instead of `next/link` or `next/navigation`
+- For images: Use standard imports or public folder references
+- Check package.json for correct dependencies
+
+### 2. JSX Syntax Errors
+**Pattern**: `Unterminated string literal` or `Invalid character`
+**Common causes**:
+- Escaped quotes in JSX (e.g., `className=\"text-white\"`)
+- Incorrect quote escaping in template strings
+- Copy-pasting code from other sources that may have different quote encoding
+
+**Solutions**:
+- Use proper JSX quotes: `className="text-white"` not `className=\"text-white\"`
+- For dynamic values: `className={variable}` or `className={\`template-${var}\`}`
+- When fixing: Find and replace all instances of `\"` with `"` within JSX attributes
+
+**Files Fixed**:
+- src/pages/Login.tsx
+- src/pages/Overview.tsx  
+- src/pages/TrainModel.tsx
+
+### 3. TypeScript Type Errors
+**Pattern**: `Type 'X' is not assignable to type 'Y'`
+**Solutions**:
+- Check import types from Supabase
+- Ensure database types are up to date
+- Verify prop types match component definitions
+
+## Project Architecture Notes
+
+### Framework Stack
+- **Frontend**: React + Vite + TypeScript
+- **Routing**: React Router DOM (NOT Next.js)
+- **Backend**: Supabase (Lovable Cloud)
+- **Styling**: Tailwind CSS + shadcn/ui
+
+### Key Patterns
+1. **Routing**: Use `react-router-dom` for all navigation
+2. **Authentication**: Supabase Auth with magic links
+3. **Database**: PostgreSQL via Supabase with RLS policies
+4. **State**: React hooks + TanStack Query
+
+### Important Files
+- `src/App.tsx` - Main app router
+- `src/integrations/supabase/client.ts` - Supabase client
+- `src/services/supabase.ts` - Supabase service layer
+- `supabase/migrations/` - Database migrations

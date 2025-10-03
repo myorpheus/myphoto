@@ -121,22 +121,22 @@ const TrainModel = () => {
   };
 
   return (
-    <div className=\"min-h-screen bg-background\">
-      <header className=\"border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60\">
-        <div className=\"container flex h-16 items-center\">
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center">
           <Button 
-            variant=\"ghost\" 
+            variant="ghost" 
             onClick={() => navigate('/overview')}
-            className=\"mr-4\"
+            className="mr-4"
           >
-            <ArrowLeft className=\"w-4 h-4 mr-2\" />
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <h1 className=\"text-2xl font-bold\">Train New Model</h1>
+          <h1 className="text-2xl font-bold">Train New Model</h1>
         </div>
       </header>
 
-      <main className=\"container max-w-2xl py-8\">
+      <main className="container max-w-2xl py-8">
         <Card>
           <CardHeader>
             <CardTitle>Create Your AI Model</CardTitle>
@@ -145,18 +145,18 @@ const TrainModel = () => {
               Best results come from clear, well-lit photos showing your face from different angles.
             </CardDescription>
           </CardHeader>
-          <CardContent className=\"space-y-6\">
+          <CardContent className="space-y-6">
             <div>
-              <label className=\"block text-sm font-medium mb-2\">Model Name</label>
+              <label className="block text-sm font-medium mb-2">Model Name</label>
               <Input
-                placeholder=\"e.g., My Professional Headshots\"
+                placeholder="e.g., My Professional Headshots"
                 value={modelName}
                 onChange={(e) => setModelName(e.target.value)}
               />
             </div>
 
             <div>
-              <label className=\"block text-sm font-medium mb-2\">
+              <label className="block text-sm font-medium mb-2">
                 Upload Photos ({selectedFiles.length}/20)
               </label>
               
@@ -166,32 +166,32 @@ const TrainModel = () => {
                   ${isDragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
               >
                 <input {...getInputProps()} />
-                <Upload className=\"w-8 h-8 mx-auto mb-4 text-muted-foreground\" />
-                <p className=\"text-sm text-muted-foreground\">
+                <Upload className="w-8 h-8 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
                   {isDragActive
                     ? 'Drop your photos here...'
                     : 'Drag & drop photos here, or click to select files'}
                 </p>
-                <p className=\"text-xs text-muted-foreground mt-2\">
+                <p className="text-xs text-muted-foreground mt-2">
                   JPEG, JPG, PNG supported • 4-20 photos recommended
                 </p>
               </div>
 
               {selectedFiles.length > 0 && (
-                <div className=\"mt-4\">
-                  <div className=\"grid grid-cols-3 gap-4\">
+                <div className="mt-4">
+                  <div className="grid grid-cols-3 gap-4">
                     {selectedFiles.map((file, index) => (
-                      <div key={index} className=\"relative group\">
+                      <div key={index} className="relative group">
                         <img
                           src={URL.createObjectURL(file)}
                           alt={`Upload ${index + 1}`}
-                          className=\"w-full h-24 object-cover rounded-lg\"
+                          className="w-full h-24 object-cover rounded-lg"
                         />
                         <button
                           onClick={() => removeFile(index)}
-                          className=\"absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity\"
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                         >
-                          <X className=\"w-4 h-4\" />
+                          <X className="w-4 h-4" />
                         </button>
                       </div>
                     ))}
@@ -200,9 +200,9 @@ const TrainModel = () => {
               )}
             </div>
 
-            <div className=\"bg-muted p-4 rounded-lg\">
-              <h4 className=\"font-medium mb-2\">Tips for best results:</h4>
-              <ul className=\"text-sm text-muted-foreground space-y-1\">
+            <div className="bg-muted p-4 rounded-lg">
+              <h4 className="font-medium mb-2">Tips for best results:</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
                 <li>• Use clear, high-quality photos</li>
                 <li>• Include variety: different angles, expressions, lighting</li>
                 <li>• Avoid sunglasses, hats, or face obstructions</li>
@@ -212,7 +212,7 @@ const TrainModel = () => {
 
             <Button 
               onClick={handleTrain} 
-              className=\"w-full\"
+              className="w-full"
               disabled={isTraining || selectedFiles.length < 4 || !modelName.trim()}
             >
               {isTraining ? 'Starting Training...' : 'Start Training (1 Credit)'}

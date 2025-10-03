@@ -47,20 +47,20 @@ const Login = () => {
 
   if (isEmailSent) {
     return (
-      <div className=\"min-h-screen flex items-center justify-center bg-background p-4\">
-        <Card className=\"w-full max-w-md\">
-          <CardHeader className=\"text-center\">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
             <CardTitle>Check your email</CardTitle>
             <CardDescription>
               We've sent you a magic link to sign in to your account
             </CardDescription>
           </CardHeader>
-          <CardContent className=\"text-center\">
-            <p className=\"text-sm text-muted-foreground mb-4\">
+          <CardContent className="text-center">
+            <p className="text-sm text-muted-foreground mb-4">
               Click the link in the email we sent to {email} to complete your sign in
             </p>
             <Button 
-              variant=\"outline\" 
+              variant="outline" 
               onClick={() => setIsEmailSent(false)}
             >
               Try different email
@@ -72,28 +72,28 @@ const Login = () => {
   }
 
   return (
-    <div className=\"min-h-screen flex items-center justify-center bg-background p-4\">
-      <Card className=\"w-full max-w-md\">
-        <CardHeader className=\"text-center\">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
           <CardTitle>Sign in to your account</CardTitle>
           <CardDescription>
             Enter your email to receive a magic link
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className=\"space-y-4\">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Input
-                type=\"email\"
-                placeholder=\"Enter your email\"
+                type="email"
+                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
             <Button 
-              type=\"submit\" 
-              className=\"w-full\"
+              type="submit" 
+              className="w-full"
               disabled={isLoading}
             >
               {isLoading ? 'Sending...' : 'Send Magic Link'}
