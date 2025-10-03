@@ -1,96 +1,48 @@
-import { useState } from "react";
-import { Hero } from "@/components/Hero";
-import { PhotoUpload } from "@/components/PhotoUpload";
-import { GenerationProgress } from "@/components/GenerationProgress";
-import { HeadshotGallery } from "@/components/HeadshotGallery";
-import { useToast } from "@/hooks/use-toast";
-
-type AppStep = "hero" | "upload" | "processing" | "results";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import HeroSection from "@/components/homepage/HeroSection";
+import BrandsSection from "@/components/homepage/BrandsSection";
+import ProcessSection from "@/components/homepage/ProcessSection";
+import FeaturesSection from "@/components/homepage/FeaturesSection";
+import ExamplesSection from "@/components/homepage/ExamplesSection";
+import TestimonialsSection from "@/components/homepage/TestimonialsSection";
+import PricingSection from "@/components/homepage/PricingSection";
+import FAQSection from "@/components/homepage/FAQSection";
+import CTASection from "@/components/homepage/CTASection";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { supabaseService } from "@/services/supabase";
 
 const Index = () => {
-  const [step, setStep] = useState<AppStep>("hero");
-  const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState<"training" | "generating" | "completed">("training");
-  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
-  const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const handleGetStarted = () => {
-    setStep("upload");
-  };
-
-  const handlePhotosSelected = (files: File[]) => {
-    setStep("processing");
-    simulateGeneration();
-  };
-
-  const simulateGeneration = () => {
-    // Simulate training phase
-    setStatus("training");
-    let currentProgress = 0;
-    
-    const trainingInterval = setInterval(() => {
-      currentProgress += 10;
-      setProgress(currentProgress);
-      
-      if (currentProgress >= 50) {
-        clearInterval(trainingInterval);
-        setStatus("generating");
-        
-        // Simulate generation phase
-        const generatingInterval = setInterval(() => {
-          currentProgress += 10;
-          setProgress(currentProgress);
-          
-          if (currentProgress >= 100) {
-            clearInterval(generatingInterval);
-            setStatus("completed");
-            
-            // Set placeholder images
-            setTimeout(() => {
-              setGeneratedImages([
-                "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
-                "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400",
-                "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400",
-                "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400",
-                "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400",
-                "https://images.unsplash.com/photo-1463453091185-61582044d556?w=400",
-              ]);
-              setStep("results");
-            }, 1000);
-          }
-        }, 500);
+  useEffect(() => {
+    // Check if user is already authenticated and redirect to overview
+    const checkUser = async () => {
+      const user = await supabaseService.getCurrentUser();
+      if (user) {
+        navigate('/overview');
       }
-    }, 500);
-  };
-
-  const handleDownload = (imageUrl: string) => {
-    toast({
-      title: "Download started",
-      description: "Your headshot is being downloaded",
-    });
-    // In production, this would trigger actual download
-    window.open(imageUrl, "_blank");
-  };
-
-  const handleStartNew = () => {
-    setStep("upload");
-    setProgress(0);
-    setStatus("training");
-    setGeneratedImages([]);
-  };
+    };
+    
+    checkUser();
+  }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-background">
-      {step === "hero" && <Hero onGetStarted={handleGetStarted} />}
-      {step === "upload" && <PhotoUpload onPhotosSelected={handlePhotosSelected} />}
-      {step === "processing" && <GenerationProgress status={status} progress={progress} />}
-      {step === "results" && (
-        <HeadshotGallery
-          images={generatedImages}
-          onDownload={handleDownload}
-          onStartNew={handleStartNew}
-        />
-      )}
+    <div className="flex min-h-screen flex-col">
+      <Navbar />
+      <div className="flex-1">
+        <HeroSection />
+        <BrandsSection />
+        <ProcessSection />
+        <FeaturesSection />
+        <ExamplesSection />
+        <TestimonialsSection />
+        <PricingSection />
+        <FAQSection />
+        <CTASection />
+      </div>
+      <Footer />
     </div>
   );
 };
