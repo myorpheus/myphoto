@@ -94,33 +94,10 @@ export default function Footer() {
             </ul>
           </div>
         </div>
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t pt-8 md:flex-row">
+        <div className="mt-12 flex flex-col items-center justify-center gap-4 border-t pt-8">
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} Headshots AI. All rights reserved.
           </p>
-          <div className="flex items-center gap-4">
-            <p className="text-sm text-muted-foreground">
-              Open-source powered by{" "}
-              <a
-                href="https://www.astria.ai/"
-                className="text-primary hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Astria
-              </a>
-              ,{" "}
-              <a
-                href="https://supabase.com/"
-                className="text-primary hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Supabase
-              </a>
-              , and Lovable
-            </p>
-          </div>
         </div>
       </div>
     </footer>

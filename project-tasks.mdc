@@ -38,6 +38,20 @@
     - src/components/TrainModelZone.tsx
     - src/components/homepage/* (entire directory)
     - src/components/realtime/* (entire directory)
+  - **Note**: If you still see errors about these files, clear your browser cache or restart the dev server
+  - **Date**: 2025-10-03
+
+- [x] **Removed attribution from Footer**
+  - **Problem**: User requested removal of "Open-source powered by Astria, Supabase, and Lovable" text
+  - **Solution**: Simplified footer to only show copyright notice
+  - **File**: src/components/Footer.tsx
+  - **Date**: 2025-10-03
+
+- [x] **Fixed TypeScript type instantiation error in supabase.ts**
+  - **Problem**: `Type instantiation is excessively deep and possibly infinite` error at line 160
+  - **Root cause**: Code was trying to query a 'samples' table that doesn't exist in the database schema
+  - **Solution**: Disabled the `getUserSamples()` method until the samples table is created
+  - **File**: src/services/supabase.ts
   - **Date**: 2025-10-03
 
 - [x] **Database trigger for app-specific user creation**
@@ -53,6 +67,13 @@
   - **Impact**: Lovable cannot properly run the project
   - **Solution**: User needs to manually create package-lock.json by running `npm install` in the project root
   - **Note**: package-lock.json cannot be edited directly by Lovable
+
+### ⚠️ KNOWN NON-BLOCKING ISSUES
+- **Cached Next.js component errors**
+  - **Error**: May still see errors about deleted Next.js components (homepage/, realtime/, etc.)
+  - **Impact**: These files have been deleted but may be cached
+  - **Solution**: Clear browser cache, restart dev server, or hard refresh the page
+  - **Status**: Will resolve automatically on clean build
 
 ### 🟡 PENDING TASKS
 - [ ] **Implement app_source metadata in signup flow**

@@ -9,7 +9,7 @@ type Image = Database['public']['Tables']['images']['Row'];
 type ImageInsert = Database['public']['Tables']['images']['Insert'];
 
 type Credits = Database['public']['Tables']['credits']['Row'];
-type Sample = Database['public']['Tables']['samples']['Row'];
+// type Sample = Database['public']['Tables']['samples']['Row']; // samples table doesn't exist yet
 
 export class SupabaseService {
   // Models
@@ -156,7 +156,13 @@ export class SupabaseService {
   }
 
   // Samples
-  async getUserSamples(userId: string): Promise<Sample[]> {
+  // Note: 'samples' table doesn't exist in current database schema
+  // This method is disabled until the table is created
+  async getUserSamples(userId: string): Promise<any[]> {
+    console.warn('getUserSamples: samples table not yet implemented');
+    return [];
+    
+    /* Uncomment when 'samples' table is added to database:
     const { data, error } = await supabase
       .from('samples')
       .select('*')
@@ -169,6 +175,7 @@ export class SupabaseService {
     }
 
     return data || [];
+    */
   }
 
   // Authentication helpers
