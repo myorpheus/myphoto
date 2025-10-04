@@ -59,8 +59,8 @@ export default {
         },
       },
       fontFamily: {
-        cinzel: ["Cinzel", "serif"],
-        sans: ["Inter", "sans-serif"],
+        satoshi: ["Satoshi", "sans-serif"],
+        sans: ["Satoshi", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",
