@@ -17,8 +17,8 @@ When analyzing large codebases or multiple files that might exceed context limit
 **When @google/gemini-cli quota is exceeded**, use the custom backup client with your own Google Cloud project:
 
 ### Setup Complete ✅
-- **Project ID**: `136334456295` 
-- **API Key**: Configured and tested
+- **Project ID**: Configure your own Google Cloud project
+- **API Key**: Configure your own API key
 - **Model**: `gemini-2.5-pro` (default)
 - **Custom Client**: `gemini-api-client.js` with @google/generative-ai SDK
 - **Backup Script**: `./gemini-backup.sh` for easy usage
@@ -33,7 +33,7 @@ When analyzing large codebases or multiple files that might exceed context limit
 
 **Direct Node.js usage:**
 ```bash
-GOOGLE_CLOUD_PROJECT=136334456295 node gemini-api-client.js "@src/ Analyze architecture"
+GOOGLE_CLOUD_PROJECT=your-project-id node gemini-api-client.js "@src/ Analyze architecture"
 ```
 
 **When to Use Backup:**
@@ -239,8 +239,8 @@ Required in `/backend/.env`:
 - `SUPABASE_URL`, `SUPABASE_ANON_KEY` - Database connection
 - `STRIPE_SECRET_KEY` - Payment processing
 - `JWT_SECRET` - Authentication tokens
-- API keys for AI services (DEEPSEEK_API_KEY, etc.)
-- `ASTRIA_API_KEY`: `sd_EC8jTkhdDJL3sn2HmSJB23qEfAXMRB` - Astria AI image generation service
+- `DEEPSEEK_API_KEY` - DeepSeek AI service
+- `ASTRIA_API_KEY` - Astria AI image generation service
 
 ### Database Schema
 - Schema defined in `/backend/supabase-schema.sql`
