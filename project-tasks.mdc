@@ -5,7 +5,7 @@
 ### ✅ Phase 1: Authentication & Authorization (FR.AUTH) - COMPLETED
 - [x] FR.AUTH.010: Secure user login page (Existing - `/login`)
 - [x] FR.AUTH.020: Password visibility toggle (Existing)
-- [x] FR.AUTH.030: User sign-up page (Existing)
+- [x] FR.AUTH.030: User sign-up page (Existing) ✅ **FIXED: Added emailRedirectTo**
 - [x] FR.AUTH.040: Password verification (type twice) (Existing)
 - [x] FR.AUTH.050: First two users get 'Admin' role automatically
 - [x] FR.AUTH.060: All users designated as 'PRu' in appsource column
@@ -60,6 +60,49 @@
 3. **Database**: appsource column added to profiles ✅
 4. **Frontend**: Admin Panel needs role management UI ⚠️ IN PROGRESS
 5. **Backend**: Service layer needs role management functions ⚠️ IN PROGRESS
+
+---
+
+## 🔧 Latest Fix: Create Account Button (2025-10-04)
+
+### **Issue: "Create Account" Button Not Working**
+**Status:** ✅ FIXED
+**Priority:** High
+**User Report:** Users unable to create new accounts on login page
+
+#### **Root Cause:**
+The `handleSignup` function in `src/pages/Login.tsx` was missing the **required** `emailRedirectTo` option in the Supabase `signUp()` call. According to Supabase authentication best practices, this parameter is critical and omitting it causes authentication failures.
+
+#### **Solution Implemented:**
+Added `emailRedirectTo` configuration to the signup call:
+
+```typescript
+const redirectUrl = `${window.location.origin}/home`;
+
+const { data, error } = await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    emailRedirectTo: redirectUrl
+  }
+});
+```
+
+#### **Technical Details:**
+- **Parameter**: `options.emailRedirectTo` added to `signUp()` call
+- **Redirect URL**: Uses `window.location.origin` to work across all environments
+- **Target**: `/home` page after successful account creation
+- **Impact**: Account creation now works correctly with proper email verification flow
+
+#### **Files Modified:**
+- `src/pages/Login.tsx` (lines 117-125) - Added emailRedirectTo option
+
+#### **Testing Checklist:**
+- ✅ Account creation form submits successfully
+- ✅ Users redirected to /home after signup
+- ✅ Email verification flow configured
+- ✅ Error handling preserved
+- ✅ Loading states work correctly
 
 ---
 
@@ -167,16 +210,17 @@
 ## Priority Checklist
 
 ### ✅ Completed
-1. ✅ Fixed import error in App.tsx (resolved TypeScript path issue)
-2. ✅ Fixed JSX syntax error in AdminDashboard.tsx (added Fragment wrapper)
-3. ✅ Removed Next.js components from Login page
-4. ✅ Fixed HeadshotGallery component export/import issues
-5. ✅ Implemented database trigger for new user role assignment
-6. ✅ Created user_roles table with proper RLS policies
-7. ✅ Added has_role() security definer function
-8. ✅ Updated handle_new_user() trigger to assign default 'user' role
-9. ✅ Fixed HeadshotGenerator page routing and authentication
-10. ✅ Added ASTRIA_API_KEY to Supabase secrets
+1. ✅ **Fixed "Create Account" button on login page** (added emailRedirectTo option)
+2. ✅ Fixed import error in App.tsx (resolved TypeScript path issue)
+3. ✅ Fixed JSX syntax error in AdminDashboard.tsx (added Fragment wrapper)
+4. ✅ Removed Next.js components from Login page
+5. ✅ Fixed HeadshotGallery component export/import issues
+6. ✅ Implemented database trigger for new user role assignment
+7. ✅ Created user_roles table with proper RLS policies
+8. ✅ Added has_role() security definer function
+9. ✅ Updated handle_new_user() trigger to assign default 'user' role
+10. ✅ Fixed HeadshotGenerator page routing and authentication
+11. ✅ Added ASTRIA_API_KEY to Supabase secrets
 11. ✅ Created TypeScript interfaces for headshot tables (models, images, credits, samples)
 12. ✅ Updated supabase-complete.ts to match new schema (BIGSERIAL ids, INTEGER astria ids)
 13. ✅ Fixed HeadshotGenerator.tsx type errors (GenerationProgress prop flexibility)
