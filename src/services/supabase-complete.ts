@@ -1,0 +1,358 @@
+import { supabase } from '@/integrations/supabase/client';
+
+export interface Model {
+  id: number;
+  user_id: string;
+  astria_model_id: number;
+  name: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ModelInsert {
+  user_id: string;
+  astria_model_id: number;
+  name: string;
+  status: string;
+}
+
+export interface ModelUpdate {
+  name?: string;
+  status?: string;
+  updated_at?: string;
+}
+
+export interface Image {
+  id: number;
+  model_id: number;
+  user_id: string;
+  astria_image_id?: number;
+  url: string;
+  prompt?: string;
+  status: string;
+  created_at: string;
+}
+
+export interface ImageInsert {
+  model_id: number;
+  user_id: string;
+  astria_image_id?: number;
+  url: string;
+  prompt?: string;
+  status: string;
+}
+
+export interface Sample {
+  id: string;
+  user_id: string;
+  model_id?: number;
+  file_name: string;
+  file_path: string;
+  file_size?: number;
+  created_at: string;
+}
+
+export interface Credits {
+  id: string;
+  user_id: string;
+  credits: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export class CompletSupabaseService {
+  // User Roles
+  async getUserRoles(userId: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching user roles:', error);
+      return [];
+    }
+
+    return data?.map(r => r.role) || [];
+  }
+
+  async hasRole(userId: string, role: string): Promise<boolean> {
+    const roles = await this.getUserRoles(userId);
+    return roles.includes(role);
+  }
+
+  async isAdmin(userId: string): Promise<boolean> {
+    const roles = await this.getUserRoles(userId);
+    return roles.includes('admin') || roles.includes('super_admin');
+  }
+
+  // Models
+  async createModel(model: ModelInsert): Promise<Model> {
+    const { data, error } = await supabase
+      .from('models')
+      .insert([model])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating model:', error);
+      throw new Error('Failed to create model');
+    }
+
+    return data;
+  }
+
+  async getModel(id: number): Promise<Model | null> {
+    const { data, error } = await supabase
+      .from('models')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching model:', error);
+      return null;
+    }
+
+    return data;
+  }
+
+  async getUserModels(userId: string): Promise<Model[]> {
+    const { data, error } = await supabase
+      .from('models')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching user models:', error);
+      return [];
+    }
+
+    return data || [];
+  }
+
+  async updateModel(id: number, updates: ModelUpdate): Promise<Model | null> {
+    const { data, error } = await supabase
+      .from('models')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating model:', error);
+      return null;
+    }
+
+    return data;
+  }
+
+  async deleteModel(id: number): Promise<boolean> {
+    const { error } = await supabase
+      .from('models')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting model:', error);
+      return false;
+    }
+
+    return true;
+  }
+
+  // Images
+  async createImage(image: ImageInsert): Promise<Image> {
+    const { data, error } = await supabase
+      .from('images')
+      .insert([image])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating image:', error);
+      throw new Error('Failed to create image');
+    }
+
+    return data;
+  }
+
+  async getModelImages(modelId: number): Promise<Image[]> {
+    const { data, error } = await supabase
+      .from('images')
+      .select('*')
+      .eq('model_id', modelId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching model images:', error);
+      return [];
+    }
+
+    return data || [];
+  }
+
+  async getUserImages(userId: string): Promise<Image[]> {
+    const { data, error } = await supabase
+      .from('images')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching user images:', error);
+      return [];
+    }
+
+    return data || [];
+  }
+
+  async updateImageStatus(id: number, status: string, url?: string): Promise<Image | null> {
+    const updateData: any = { status };
+    if (url) updateData.url = url;
+
+    const { data, error } = await supabase
+      .from('images')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating image:', error);
+      return null;
+    }
+
+    return data;
+  }
+
+  // Credits
+  async getUserCredits(userId: string): Promise<number> {
+    const { data, error } = await supabase
+      .from('credits')
+      .select('credits')
+      .eq('user_id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching user credits:', error);
+      return 0;
+    }
+
+    return data?.credits || 0;
+  }
+
+  async updateUserCredits(userId: string, credits: number): Promise<boolean> {
+    const { error } = await supabase
+      .from('credits')
+      .upsert([{ 
+        user_id: userId, 
+        credits: credits, 
+        updated_at: new Date().toISOString() 
+      }]);
+
+    if (error) {
+      console.error('Error updating user credits:', error);
+      return false;
+    }
+
+    return true;
+  }
+
+  async decrementUserCredits(userId: string, amount: number = 1): Promise<boolean> {
+    const currentCredits = await this.getUserCredits(userId);
+    if (currentCredits < amount) {
+      return false;
+    }
+
+    return await this.updateUserCredits(userId, currentCredits - amount);
+  }
+
+  async incrementUserCredits(userId: string, amount: number = 1): Promise<boolean> {
+    const currentCredits = await this.getUserCredits(userId);
+    return await this.updateUserCredits(userId, currentCredits + amount);
+  }
+
+  // Samples
+  async getUserSamples(userId: string): Promise<Sample[]> {
+    const { data, error } = await supabase
+      .from('samples')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching user samples:', error);
+      return [];
+    }
+
+    return data || [];
+  }
+
+  async createSample(sample: Omit<Sample, 'id' | 'created_at'>): Promise<Sample> {
+    const { data, error } = await supabase
+      .from('samples')
+      .insert([sample])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating sample:', error);
+      throw new Error('Failed to create sample');
+    }
+
+    return data;
+  }
+
+  async deleteUserSamples(userId: string, modelId?: number): Promise<boolean> {
+    let query = supabase
+      .from('samples')
+      .delete()
+      .eq('user_id', userId);
+
+    if (modelId) {
+      query = query.eq('model_id', modelId);
+    }
+
+    const { error } = await query;
+
+    if (error) {
+      console.error('Error deleting samples:', error);
+      return false;
+    }
+
+    return true;
+  }
+
+  // Authentication helpers
+  async getCurrentUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    return user;
+  }
+
+  async signOut() {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error signing out:', error);
+      throw error;
+    }
+  }
+
+  async signInWithEmail(email: string) {
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      console.error('Error signing in:', error);
+      throw error;
+    }
+  }
+}
+
+export const completeSupabaseService = new CompletSupabaseService();
