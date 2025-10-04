@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Camera, Sparkles, Zap, Shield, ArrowRight } from "lucide-react";
 import Footer from "@/components/Footer";
 import { supabaseService } from "@/services/supabase";
-import heroBackground from "@/assets/hero-bg.jpg";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -67,20 +66,6 @@ const Index = () => {
       <main className="flex-1">
         {/* Hero Section */}
         <section className="container px-4 pt-20 pb-32 md:px-6 md:pt-32 md:pb-40 relative overflow-hidden">
-          {/* Background Image */}
-          <div 
-            className="absolute inset-0 -z-20 opacity-30"
-            style={{
-              backgroundImage: `url(${heroBackground})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat'
-            }}
-          />
-          
-          {/* Overlay Gradient */}
-          <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/80 via-background/60 to-background" />
-          
           {/* Animated Background Elements */}
           <div className="absolute inset-0 -z-10">
             <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
