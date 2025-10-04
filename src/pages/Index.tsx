@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Camera, Sparkles, Zap, Shield, ArrowRight } from "lucide-react";
 import Footer from "@/components/Footer";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { supabaseService } from "@/services/supabase";
 
 const Index = () => {
@@ -48,18 +49,21 @@ const Index = () => {
               <Camera className="h-7 w-7 text-primary animate-glow" />
               <div className="absolute inset-0 h-7 w-7 bg-primary/20 blur-xl animate-glow" />
             </div>
-            <span className="font-cinzel bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
               Headshots AI
             </span>
           </div>
-          <Button 
-            onClick={() => navigate('/login')}
-            variant="outline"
-            className="group hover:border-primary transition-all duration-300"
-          >
-            Sign In
-            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </Button>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Button 
+              onClick={() => navigate('/login')}
+              variant="outline"
+              className="group hover:border-primary transition-all duration-300"
+            >
+              Sign In
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </div>
         </div>
       </header>
       
@@ -80,7 +84,7 @@ const Index = () => {
               </span>
             </div>
             
-            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold font-cinzel tracking-tight">
+            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight">
               <span className="block mb-2 bg-gradient-to-r from-foreground via-foreground/90 to-foreground/80 bg-clip-text text-transparent">
                 Your Perfect
               </span>
@@ -101,7 +105,7 @@ const Index = () => {
                 className="text-lg px-8 py-6 h-auto group relative overflow-hidden bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:shadow-primary/50 transition-all duration-300"
               >
                 <span className="relative z-10 flex items-center gap-2">
-                  Get Started Free
+                  Get Started Now
                   <Sparkles className="h-5 w-5 group-hover:rotate-12 transition-transform" />
                 </span>
               </Button>
@@ -124,7 +128,7 @@ const Index = () => {
         <section id="features" className="container px-4 py-20 md:px-6 md:py-32">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16 space-y-4 animate-fade-in">
-              <h2 className="text-4xl md:text-5xl font-bold font-cinzel">
+              <h2 className="text-4xl md:text-5xl font-bold">
                 Why Choose <span className="text-primary">Headshots AI</span>
               </h2>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -146,7 +150,7 @@ const Index = () => {
                     <div className="absolute inset-0 w-14 h-14 bg-primary/5 blur-xl rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                   
-                  <h3 className="text-2xl font-bold mb-3 font-cinzel group-hover:text-primary transition-colors">
+                  <h3 className="text-2xl font-bold mb-3 group-hover:text-primary transition-colors">
                     {feature.title}
                   </h3>
                   
@@ -162,7 +166,7 @@ const Index = () => {
         {/* CTA Section */}
         <section className="container px-4 py-20 md:px-6 md:py-32">
           <div className="max-w-4xl mx-auto text-center space-y-8 p-12 rounded-3xl bg-gradient-to-br from-primary/10 via-accent/10 to-primary/10 border border-primary/20 backdrop-blur-sm animate-fade-in">
-            <h2 className="text-4xl md:text-5xl font-bold font-cinzel">
+            <h2 className="text-4xl md:text-5xl font-bold">
               Ready to Get Your Perfect Headshot?
             </h2>
             

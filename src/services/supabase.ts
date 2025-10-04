@@ -142,18 +142,32 @@ export class SupabaseService {
     }
   }
 
-  async signInWithEmail(email: string) {
-    const { error } = await supabase.auth.signInWithOtp({
+  async signInWithEmail(email: string, password: string) {
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+      password,
     });
 
     if (error) {
       console.error('Error signing in:', error);
       throw error;
     }
+
+    return data;
+  }
+
+  async signUpWithEmail(email: string, password: string) {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      console.error('Error signing up:', error);
+      throw error;
+    }
+
+    return data;
   }
 }
 

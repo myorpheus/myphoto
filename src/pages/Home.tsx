@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { supabaseService } from "@/services/supabase";
 import { completeSupabaseService } from "@/services/supabase-complete";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { 
   Camera, 
   Sparkles, 
@@ -120,7 +121,7 @@ const Home = () => {
               <Camera className="h-7 w-7 text-primary animate-glow" />
               <div className="absolute inset-0 h-7 w-7 bg-primary/20 blur-xl animate-glow" />
             </div>
-            <span className="font-cinzel bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
               Headshots AI
             </span>
           </div>
@@ -130,6 +131,8 @@ const Home = () => {
               <Coins className="h-4 w-4 text-primary" />
               <span className="font-semibold text-sm">{userCredits} Credits</span>
             </div>
+            
+            <ThemeToggle />
             
             <Button 
               variant="ghost" 
@@ -151,7 +154,7 @@ const Home = () => {
               <User className="h-8 w-8 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-4xl md:text-5xl font-bold font-cinzel">
+              <h1 className="text-4xl md:text-5xl font-bold">
                 Welcome back!
               </h1>
               <p className="text-muted-foreground text-lg">
@@ -174,7 +177,7 @@ const Home = () => {
 
         {/* Quick Actions */}
         <div className="mb-16">
-          <h2 className="text-3xl font-bold font-cinzel mb-6">Quick Actions</h2>
+          <h2 className="text-3xl font-bold mb-6">Quick Actions</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {quickActions.map((action, index) => (
               <Card 
@@ -189,7 +192,7 @@ const Home = () => {
                   <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                     <action.icon className="h-7 w-7 text-primary" />
                   </div>
-                  <CardTitle className="font-cinzel group-hover:text-primary transition-colors">
+                  <CardTitle className="group-hover:text-primary transition-colors">
                     {action.title}
                   </CardTitle>
                   <CardDescription>{action.description}</CardDescription>
@@ -212,7 +215,7 @@ const Home = () => {
         <div className="grid md:grid-cols-2 gap-6 mb-16">
           <Card className="animate-fade-in border-border">
             <CardHeader>
-              <CardTitle className="font-cinzel">Your Credits</CardTitle>
+              <CardTitle>Your Credits</CardTitle>
               <CardDescription>Available credits for headshot generation</CardDescription>
             </CardHeader>
             <CardContent>
@@ -235,7 +238,7 @@ const Home = () => {
 
           <Card className="animate-fade-in border-border" style={{ animationDelay: '0.1s' }}>
             <CardHeader>
-              <CardTitle className="font-cinzel">Account Settings</CardTitle>
+              <CardTitle>Account Settings</CardTitle>
               <CardDescription>Manage your account preferences</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
