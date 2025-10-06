@@ -116,6 +116,81 @@ ASTRIA_API_KEY=your_actual_astria_api_key
 6. ✅ **~~Add comprehensive error handling~~** - Implemented with enhanced debugging
 7. **Set up monitoring for API usage and quotas** - Ready for production monitoring
 
+#### 🖼️ GALLERY & IMAGE LIFECYCLE MANAGEMENT - NEW PRIORITY
+**Priority:** HIGH
+**Dependencies:** Headshot generation must be working
+**User Request:** Gallery view with 24-hour image storage and auto-cleanup
+
+##### 📸 Gallery Page Implementation
+- [ ] Create Gallery page component (`src/pages/Gallery.tsx`)
+- [ ] Add route for `/gallery` in App.tsx
+- [ ] Display all user's generated headshots with metadata
+- [ ] Show image status (pending, generating, completed, failed)
+- [ ] Add filtering by status and date
+- [ ] Implement grid layout with responsive design
+- [ ] Add download functionality for completed images
+- [ ] Show generation timestamp and expiry countdown
+
+##### 🔗 Generation Page Enhancement
+- [ ] Add "View Gallery" link on `/generate` page header
+- [ ] Display pending generations section on `/generate` page
+- [ ] Show real-time status updates for pending images
+- [ ] Add progress indicators for each pending generation
+- [ ] Link pending images to full gallery view
+- [ ] Show estimated completion time for generating images
+
+##### ⏰ 24-Hour Image Lifecycle
+- [ ] Add `expires_at` column to images table (TIMESTAMP)
+- [ ] Set `expires_at = created_at + INTERVAL '24 hours'` on insert
+- [ ] Create database function `delete_expired_images()`
+- [ ] Create Supabase Edge Function for scheduled cleanup
+- [ ] Configure pg_cron extension for automatic cleanup
+- [ ] Add trigger to set expiry on image creation
+- [ ] Implement cleanup logging for audit trail
+- [ ] Add user notification before image expiry (optional)
+
+##### 🗄️ Database Changes Required
+```sql
+-- Add expiry tracking to images table
+ALTER TABLE public.images 
+ADD COLUMN expires_at TIMESTAMP WITH TIME ZONE 
+DEFAULT (now() + INTERVAL '24 hours');
+
+-- Create cleanup function
+CREATE OR REPLACE FUNCTION delete_expired_images()
+RETURNS void AS $$
+BEGIN
+  DELETE FROM public.images 
+  WHERE expires_at < now() 
+  AND status = 'completed';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Schedule daily cleanup (requires pg_cron extension)
+SELECT cron.schedule(
+  'delete-expired-images',
+  '0 * * * *', -- Run every hour
+  $$SELECT delete_expired_images()$$
+);
+```
+
+##### 📁 Files to Create/Modify
+- [ ] **NEW**: `src/pages/Gallery.tsx` - Main gallery page
+- [ ] **MODIFY**: `src/pages/HeadshotGenerator.tsx` - Add gallery link and pending images display
+- [ ] **MODIFY**: `src/App.tsx` - Add gallery route
+- [ ] **NEW**: `supabase/functions/cleanup-expired-images/index.ts` - Scheduled cleanup edge function
+- [ ] **NEW**: Database migration for expires_at column and cleanup function
+- [ ] **MODIFY**: `src/services/supabase-complete.ts` - Add gallery query methods
+
+##### ✅ Success Criteria
+- [ ] Users can navigate to gallery from generation page
+- [ ] Gallery shows all user's images with status
+- [ ] Pending images visible on both pages
+- [ ] Images automatically deleted after 24 hours
+- [ ] No orphaned images in database
+- [ ] Real-time status updates working
+- [ ] User-friendly expiry warnings
+
 ---
 
 ### ✅ Phase 1: Authentication & Authorization (FR.AUTH) - COMPLETED
