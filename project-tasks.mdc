@@ -139,6 +139,110 @@ ASTRIA_API_KEY=your_actual_astria_api_key
 - [ ] Link pending images to full gallery view
 - [ ] Show estimated completion time for generating images
 
+##### 📊 Overview Page Photo Gallery Enhancement
+**Priority:** HIGH
+**User Request:** Show all generated photos on /overview with multi-resolution downloads
+
+###### 🖼️ Full Gallery Display on Overview
+- [ ] Replace "Recent Headshots" (6 images) with full gallery view
+- [ ] Query ALL completed images from database (not just last 6)
+- [ ] Add pagination for large image collections (20-30 per page)
+- [ ] Show image metadata: generation date, model used, status
+- [ ] Add filtering options: All, Recent, By Model, By Date
+- [ ] Implement search functionality for images
+- [ ] Show image count and storage stats
+- [ ] Add empty state for users with no images
+
+###### 📥 Multi-Resolution Download System
+- [ ] Create download dropdown menu for each image
+- [ ] Add resolution options: 4K (3840x2160), 1080p (1920x1080), 720p (1280x720)
+- [ ] Create Edge Function for image resizing (`resize-image`)
+- [ ] Implement server-side image processing with Sharp or similar
+- [ ] Add download progress indicator for large files
+- [ ] Generate optimized thumbnails for gallery view
+- [ ] Cache resized images for performance
+- [ ] Add batch download option (zip multiple images)
+
+###### 🗄️ Database Schema Updates
+```sql
+-- Add image metadata for resolutions
+ALTER TABLE public.images 
+ADD COLUMN original_width INTEGER,
+ADD COLUMN original_height INTEGER,
+ADD COLUMN file_size_bytes BIGINT,
+ADD COLUMN thumbnail_url TEXT;
+
+-- Create download tracking table
+CREATE TABLE IF NOT EXISTS public.image_downloads (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  image_id BIGINT REFERENCES public.images(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  resolution TEXT NOT NULL, -- '4k', '1080p', '720p', 'original'
+  downloaded_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  file_size_bytes BIGINT
+);
+
+-- Enable RLS on downloads table
+ALTER TABLE public.image_downloads ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own downloads"
+ON public.image_downloads FOR SELECT
+TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own downloads"
+ON public.image_downloads FOR INSERT
+TO authenticated
+WITH CHECK (auth.uid() = user_id);
+```
+
+###### 🔧 Technical Implementation
+- [ ] **NEW**: `supabase/functions/resize-image/index.ts` - Image resizing edge function
+- [ ] **MODIFY**: `src/pages/Overview.tsx` - Full gallery with download options
+- [ ] **NEW**: `src/components/ImageDownloadMenu.tsx` - Download dropdown component
+- [ ] **NEW**: `src/components/ImageGalleryGrid.tsx` - Reusable gallery grid
+- [ ] **MODIFY**: `src/services/supabase-complete.ts` - Add getAllUserImages() method
+- [ ] **NEW**: Database migration for image metadata and downloads table
+- [ ] Add Sharp image processing library for resizing
+- [ ] Implement caching strategy for resized images
+
+###### 📋 Image Processing Requirements
+**Resizing Logic:**
+- **4K (3840x2160)**: Maximum quality, suitable for prints and professional use
+- **1080p (1920x1080)**: Standard HD, perfect for online portfolios and profiles
+- **720p (1280x720)**: Compressed, ideal for quick sharing and mobile use
+- **Maintain aspect ratio** for all resolutions
+- **Apply quality compression**: 90% for 4K, 85% for 1080p, 80% for 720p
+- **Generate WebP format** for web optimization (optional fallback to JPG)
+
+###### 🎨 UI/UX Enhancements for Overview
+- [ ] Add large preview modal on image click
+- [ ] Implement image carousel for browsing
+- [ ] Add "Download All" button with resolution selection
+- [ ] Show download statistics (total downloads, popular resolutions)
+- [ ] Add sharing options (social media, copy link)
+- [ ] Implement image favoriting/starring
+- [ ] Add image deletion with confirmation
+- [ ] Show storage usage vs. limit
+
+###### 🔒 Security & Validation
+- [ ] Validate user owns images before allowing download
+- [ ] Rate limit download requests (prevent abuse)
+- [ ] Add download quota tracking (optional)
+- [ ] Implement signed URLs for secure downloads
+- [ ] Validate image exists before processing
+- [ ] Handle edge cases: corrupted images, missing files
+- [ ] Add error handling for resize failures
+
+###### ✅ Success Criteria
+- [ ] Overview page displays ALL user images (not just 6)
+- [ ] Users can download any resolution: 4K, 1080p, 720p
+- [ ] Download process is fast and reliable
+- [ ] Resized images maintain quality
+- [ ] Gallery is paginated and performant
+- [ ] Download tracking works correctly
+- [ ] UI is intuitive and professional
+
 ##### ⏰ 24-Hour Image Lifecycle
 - [ ] Add `expires_at` column to images table (TIMESTAMP)
 - [ ] Set `expires_at = created_at + INTERVAL '24 hours'` on insert
@@ -179,8 +283,11 @@ SELECT cron.schedule(
 - [ ] **MODIFY**: `src/pages/HeadshotGenerator.tsx` - Add gallery link and pending images display
 - [ ] **MODIFY**: `src/App.tsx` - Add gallery route
 - [ ] **NEW**: `supabase/functions/cleanup-expired-images/index.ts` - Scheduled cleanup edge function
+- [ ] **NEW**: `supabase/functions/resize-image/index.ts` - Image resizing edge function
 - [ ] **NEW**: Database migration for expires_at column and cleanup function
 - [ ] **MODIFY**: `src/services/supabase-complete.ts` - Add gallery query methods
+- [ ] **NEW**: `src/components/ImageDownloadMenu.tsx` - Multi-resolution download UI
+- [ ] **NEW**: `src/components/ImageGalleryGrid.tsx` - Reusable gallery component
 
 ##### ✅ Success Criteria
 - [ ] Users can navigate to gallery from generation page
@@ -190,6 +297,9 @@ SELECT cron.schedule(
 - [ ] No orphaned images in database
 - [ ] Real-time status updates working
 - [ ] User-friendly expiry warnings
+- [ ] Overview page shows ALL generated photos
+- [ ] Multi-resolution downloads work (4K, 1080p, 720p)
+- [ ] Download tracking and analytics functional
 
 ---
 
