@@ -69,7 +69,7 @@ const TrainModel = () => {
 
       console.log('🔄 Loading existing Astria models...');
       
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/generate-headshot`, {
+      const response = await fetch(`https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/generate-headshot`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -233,7 +233,7 @@ const TrainModel = () => {
         const imageBase64 = await filesToBase64(selectedFiles);
 
         // Start Astria model training via secure edge function
-        const response = await fetch(`${supabase.supabaseUrl}/functions/v1/generate-headshot`, {
+        const response = await fetch(`https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/generate-headshot`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${session.access_token}`,

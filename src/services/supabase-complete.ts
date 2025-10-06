@@ -392,9 +392,7 @@ export class CompletSupabaseService {
   async assignRole(userId: string, role: string): Promise<boolean> {
     const { error } = await supabase
       .from('user_roles')
-      .insert({ user_id: userId, role })
-      .select()
-      .single();
+      .insert([{ user_id: userId, role: role as 'admin' | 'creator' | 'super_admin' | 'user' }]);
 
     if (error) {
       console.error('Error assigning role:', error);
@@ -409,7 +407,7 @@ export class CompletSupabaseService {
       .from('user_roles')
       .delete()
       .eq('user_id', userId)
-      .eq('role', role);
+      .eq('role', role as 'admin' | 'creator' | 'super_admin' | 'user');
 
     if (error) {
       console.error('Error removing role:', error);
@@ -428,7 +426,10 @@ export class CompletSupabaseService {
 
     // Then add new roles
     if (newRoles.length > 0) {
-      const roleInserts = newRoles.map(role => ({ user_id: userId, role }));
+      const roleInserts = newRoles.map(role => ({ 
+        user_id: userId, 
+        role: role as 'admin' | 'creator' | 'super_admin' | 'user' 
+      }));
       const { error } = await supabase
         .from('user_roles')
         .insert(roleInserts);

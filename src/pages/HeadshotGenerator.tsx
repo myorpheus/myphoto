@@ -77,7 +77,7 @@ const HeadshotGenerator = () => {
       const imageBase64 = await filesToBase64(files);
 
       // Train model with secure edge function
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/generate-headshot`, {
+      const response = await fetch(`https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/generate-headshot`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -147,7 +147,7 @@ const HeadshotGenerator = () => {
         if (!session) throw new Error('User not authenticated');
 
         // Check model status via edge function
-        const response = await fetch(`${supabase.supabaseUrl}/functions/v1/generate-headshot`, {
+        const response = await fetch(`https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/generate-headshot`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
@@ -250,7 +250,7 @@ const HeadshotGenerator = () => {
       if (!session) throw new Error('User not authenticated');
 
       // Generate images via secure edge function
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/generate-headshot`, {
+      const response = await fetch(`https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/generate-headshot`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,

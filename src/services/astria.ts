@@ -44,20 +44,9 @@ class AstriaService {
   private apiKey: string;
 
   constructor() {
-    this.apiKey = ASTRIA_API_KEY || '';
-    
-    // Enhanced debugging for API key configuration
-    console.log('🔧 AstriaService initialization:');
-    console.log('  - VITE_ASTRIA_API_KEY from env:', ASTRIA_API_KEY ? '[CONFIGURED]' : '[EMPTY]');
-    console.log('  - API key loaded:', this.apiKey ? `[${this.apiKey.substring(0, 8)}...]` : '[EMPTY]');
-    console.log('  - API key length:', this.apiKey?.length || 0);
-    
-    if (!this.apiKey) {
-      console.error('❌ CRITICAL: ASTRIA_API_KEY is not configured or empty');
-      console.error('   This will cause all Astria API calls to fail with 401 Unauthorized');
-    } else {
-      console.log('✅ Astria API key successfully loaded');
-    }
+    // ⚠️ DEPRECATED: API key should only be used server-side
+    this.apiKey = '';
+    console.warn('⚠️ AstriaService is deprecated. Use edge functions instead.');
   }
 
   async trainModel(request: TrainModelRequest): Promise<AstriaModel> {
