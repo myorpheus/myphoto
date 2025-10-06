@@ -53,12 +53,31 @@
 4. **~~Service Layer~~**: ✅ All database methods enabled and working
 5. **~~Client Security~~**: ✅ Direct API calls replaced with secure edge functions
 
+#### ✅ ASTRIA EXISTING MODEL INTEGRATION - COMPLETED
+1. ✅ **Edge function enhanced** - Added `list_models` action to fetch existing Astria models
+2. ✅ **TrainModel page updated** - Added existing model selection with toggle UI
+3. ✅ **Default model logic** - Automatically selects "newheadhotMAN" if found
+4. ✅ **Dual workflow support** - Handles both new model training and existing model usage
+5. ✅ **Database integration** - Existing models saved to user's model list for access
+
+**Implementation Details:**
+- **Edge Function**: `list_models` action calls `https://api.astria.ai/tunes` with authentication
+- **Frontend**: Toggle between "Create New Model" and "Use Existing Model" options
+- **Auto-detection**: Searches for models containing "newheadhotman" and sets as default
+- **Validation**: Ensures existing models are in "trained" status before usage
+- **Database**: Creates user model records for existing Astria models to enable headshot generation
+
+**Files Modified:**
+- `supabase/functions/generate-headshot/index.ts` - Added `list_models` case (lines 281-306)
+- `src/pages/TrainModel.tsx` - Complete existing model integration (lines 19-361, 494-517)
+
 #### 📋 NEXT IMMEDIATE STEPS - UPDATED  
 1. ✅ **~~Create edge function~~** - Complete with generate-headshot and webhook
-2. **Test API key with sample training request** - Ready for testing
-3. ✅ **~~Implement webhook endpoint~~** - Complete with astria-webhook function
-4. ✅ **~~Add comprehensive error handling~~** - Implemented in edge functions
-5. **Set up monitoring for API usage and quotas** - Ready for production monitoring
+2. ✅ **~~Existing model integration~~** - Complete with newheadhotMAN default selection
+3. **Test API key with sample training request** - Ready for testing
+4. ✅ **~~Implement webhook endpoint~~** - Complete with astria-webhook function
+5. ✅ **~~Add comprehensive error handling~~** - Implemented in edge functions
+6. **Set up monitoring for API usage and quotas** - Ready for production monitoring
 
 ---
 

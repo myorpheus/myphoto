@@ -278,9 +278,36 @@ serve(async (req) => {
         );
       }
 
+      case "list_models": {
+        // Call Astria API to list all tunes (models) for the account
+        const response = await fetch("https://api.astria.ai/tunes", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${ASTRIA_API_KEY}`,
+          },
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("❌ Astria API error:", response.status, errorText);
+          return new Response(
+            JSON.stringify({ error: "Failed to fetch models", details: errorText }),
+            { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const models = await response.json();
+        console.log("✅ Fetched Astria models:", models);
+        
+        return new Response(
+          JSON.stringify({ success: true, models: models }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       default:
         return new Response(
-          JSON.stringify({ error: "Invalid action. Use: train_model, generate_image, or check_status" }),
+          JSON.stringify({ error: "Invalid action. Use: train_model, generate_image, check_status, or list_models" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
     }

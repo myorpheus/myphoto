@@ -6,7 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Upload, Zap, Clock, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, Upload, Zap, Clock, CheckCircle, AlertCircle, Trash2, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { completeSupabaseService } from '@/services/supabase-complete';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,7 +16,11 @@ import { filesToBase64 } from '@/utils/file-utils';
 
 const TrainModel = () => {
   const [models, setModels] = useState<any[]>([]);
+  const [astriaModels, setAstriaModels] = useState<any[]>([]);
+  const [selectedExistingModel, setSelectedExistingModel] = useState<any>(null);
+  const [useExistingModel, setUseExistingModel] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingAstriaModels, setIsLoadingAstriaModels] = useState(false);
   const [isTraining, setIsTraining] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [modelName, setModelName] = useState('');
@@ -24,6 +30,7 @@ const TrainModel = () => {
 
   useEffect(() => {
     loadUserModels();
+    loadAstriaModels();
   }, []);
 
   const loadUserModels = async () => {
@@ -47,6 +54,63 @@ const TrainModel = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadAstriaModels = async () => {
+    try {
+      setIsLoadingAstriaModels(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.log('No session available for loading Astria models');
+        return;
+      }
+
+      console.log('🔄 Loading existing Astria models...');
+      
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/generate-headshot`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'list_models'
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to load Astria models');
+      }
+
+      const result = await response.json();
+      console.log('✅ Loaded Astria models:', result);
+      
+      if (result.models && Array.isArray(result.models)) {
+        setAstriaModels(result.models);
+        
+        // Find and set newheadhotMAN as default if it exists
+        const defaultModel = result.models.find((model: any) => 
+          model.name && model.name.toLowerCase().includes('newheadhotman')
+        );
+        
+        if (defaultModel) {
+          console.log('🎯 Found default model newheadhotMAN:', defaultModel);
+          setSelectedExistingModel(defaultModel);
+          setUseExistingModel(true);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error loading Astria models:', error);
+      toast({
+        title: 'Info',
+        description: 'Could not load existing Astria models. You can still create new models.',
+        variant: 'default',
+      });
+    } finally {
+      setIsLoadingAstriaModels(false);
     }
   };
 
@@ -82,22 +146,46 @@ const TrainModel = () => {
   };
 
   const handleTrainModel = async () => {
-    if (!modelName.trim()) {
-      toast({
-        title: 'Model Name Required',
-        description: 'Please enter a name for your model',
-        variant: 'destructive',
-      });
-      return;
+    // Validation for new model creation
+    if (!useExistingModel) {
+      if (!modelName.trim()) {
+        toast({
+          title: 'Model Name Required',
+          description: 'Please enter a name for your model',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (selectedFiles.length < 4) {
+        toast({
+          title: 'Insufficient Photos',
+          description: 'Please select at least 4 photos',
+          variant: 'destructive',
+        });
+        return;
+      }
     }
 
-    if (selectedFiles.length < 4) {
-      toast({
-        title: 'Insufficient Photos',
-        description: 'Please select at least 4 photos',
-        variant: 'destructive',
-      });
-      return;
+    // Validation for existing model usage
+    if (useExistingModel) {
+      if (!selectedExistingModel) {
+        toast({
+          title: 'Model Selection Required',
+          description: 'Please select an existing model to use',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (selectedExistingModel.status !== 'trained') {
+        toast({
+          title: 'Model Not Ready',
+          description: 'Selected model is not trained yet. Please select a trained model.',
+          variant: 'destructive',
+        });
+        return;
+      }
     }
 
     try {
@@ -107,59 +195,86 @@ const TrainModel = () => {
       const user = await completeSupabaseService.getCurrentUser();
       if (!user) throw new Error('User not authenticated');
 
-      console.log('🚀 Starting model training:', modelName);
-      
-      // Get user session for authentication
       setTrainingProgress(20);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('User not authenticated');
 
-      // Convert images to base64 for secure transmission
-      const imageBase64 = await filesToBase64(selectedFiles);
+      if (useExistingModel && selectedExistingModel) {
+        // Use existing Astria model - save to database for user access
+        console.log('💾 Saving existing model for user access:', selectedExistingModel.name);
+        
+        setTrainingProgress(50);
+        
+        // Create database record for the existing model
+        const newModel = await completeSupabaseService.createModel({
+          user_id: user.id,
+          astria_model_id: selectedExistingModel.id,
+          name: selectedExistingModel.name || `Existing Model ${selectedExistingModel.id}`,
+          status: 'trained' // Existing model is already trained
+        });
 
-      // Start Astria model training via secure edge function
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/generate-headshot`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'train_model',
-          name: modelName,
-          images: imageBase64,
-          steps: 500,
-          face_crop: true
-        }),
-      });
+        console.log('✅ Existing model saved to database:', newModel);
+        setTrainingProgress(100);
+        
+        toast({
+          title: 'Model Added!',
+          description: `Existing model "${selectedExistingModel.name}" is now available for use.`,
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to start training');
+        // Reset form
+        setUseExistingModel(false);
+        setSelectedExistingModel(null);
+        
+      } else {
+        // Create new model with training
+        console.log('🚀 Starting model training:', modelName);
+        
+        // Convert images to base64 for secure transmission
+        const imageBase64 = await filesToBase64(selectedFiles);
+
+        // Start Astria model training via secure edge function
+        const response = await fetch(`${supabase.supabaseUrl}/functions/v1/generate-headshot`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'train_model',
+            name: modelName,
+            images: imageBase64,
+            steps: 500,
+            face_crop: true
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to start training');
+        }
+
+        const astriaModel = await response.json();
+
+        console.log('✅ Astria model created via edge function:', astriaModel);
+        setTrainingProgress(60);
+
+        // The edge function already handles database model creation and sample saving
+        const dbModel = astriaModel.model;
+        
+        console.log('✅ Database model saved via edge function:', dbModel);
+        setTrainingProgress(80);
+
+        setTrainingProgress(100);
+        
+        toast({
+          title: 'Training Started!',
+          description: `Model "${modelName}" is now training. This may take 10-15 minutes.`,
+        });
+
+        // Reset form
+        setModelName('');
+        setSelectedFiles([]);
       }
-
-      const astriaModel = await response.json();
-
-      console.log('✅ Astria model created via edge function:', astriaModel);
-      setTrainingProgress(60);
-
-      // The edge function already handles database model creation and sample saving
-      // The response contains the created database model
-      const dbModel = astriaModel.model; // Edge function returns { model: dbModel, astriaModel: astriaData }
-      
-      console.log('✅ Database model saved via edge function:', dbModel);
-      setTrainingProgress(80);
-
-      setTrainingProgress(100);
-      
-      toast({
-        title: 'Training Started!',
-        description: `Model "${modelName}" is now training. This may take 10-15 minutes.`,
-      });
-
-      // Reset form
-      setModelName('');
-      setSelectedFiles([]);
       
       // Reload models
       await loadUserModels();
@@ -237,20 +352,81 @@ const TrainModel = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Model Name */}
-                <div className="space-y-2">
-                  <label htmlFor="modelName" className="text-sm font-medium">
-                    Model Name
-                  </label>
-                  <Input
-                    id="modelName"
-                    type="text"
-                    value={modelName}
-                    onChange={(e) => setModelName(e.target.value)}
-                    placeholder="Enter model name (e.g., Professional Headshots v2)"
-                    disabled={isTraining}
-                  />
+                {/* Model Selection Options */}
+                <div className="space-y-4">
+                  <Label className="text-sm font-medium">Model Options</Label>
+                  <div className="flex gap-4">
+                    <Button 
+                      variant={!useExistingModel ? "default" : "outline"}
+                      onClick={() => setUseExistingModel(false)}
+                      disabled={isTraining}
+                    >
+                      Create New Model
+                    </Button>
+                    <Button 
+                      variant={useExistingModel ? "default" : "outline"}
+                      onClick={() => setUseExistingModel(true)}
+                      disabled={isTraining || astriaModels.length === 0}
+                    >
+                      Use Existing Model ({astriaModels.length})
+                    </Button>
+                  </div>
                 </div>
+
+                {/* Existing Model Selection */}
+                {useExistingModel && astriaModels.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="existingModel" className="text-sm font-medium">
+                      Select Existing Model
+                    </Label>
+                    <Select 
+                      value={selectedExistingModel?.id?.toString() || ""} 
+                      onValueChange={(value) => {
+                        const model = astriaModels.find(m => m.id?.toString() === value);
+                        setSelectedExistingModel(model);
+                      }}
+                      disabled={isTraining}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose an existing model..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {astriaModels.map((model) => (
+                          <SelectItem key={model.id} value={model.id?.toString() || ""}>
+                            <div className="flex items-center gap-2">
+                              <span>{model.name || `Model ${model.id}`}</span>
+                              {model.name && model.name.toLowerCase().includes('newheadhotman') && (
+                                <Badge variant="secondary">Default</Badge>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedExistingModel && (
+                      <div className="text-xs text-muted-foreground">
+                        Status: {selectedExistingModel.status} • Created: {selectedExistingModel.created_at ? new Date(selectedExistingModel.created_at).toLocaleDateString() : 'Unknown'}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Model Name - only show when creating new model */}
+                {!useExistingModel && (
+                  <div className="space-y-2">
+                    <label htmlFor="modelName" className="text-sm font-medium">
+                      Model Name
+                    </label>
+                    <Input
+                      id="modelName"
+                      type="text"
+                      value={modelName}
+                      onChange={(e) => setModelName(e.target.value)}
+                      placeholder="Enter model name (e.g., Professional Headshots v2)"
+                      disabled={isTraining}
+                    />
+                  </div>
+                )}
 
                 {/* File Upload */}
                 <div className="space-y-2">
@@ -317,19 +493,25 @@ const TrainModel = () => {
                 {/* Action Button */}
                 <Button 
                   onClick={handleTrainModel}
-                  disabled={isTraining || !modelName.trim() || selectedFiles.length < 4}
+                  disabled={
+                    isTraining || 
+                    (useExistingModel 
+                      ? !selectedExistingModel || selectedExistingModel.status !== 'trained'
+                      : !modelName.trim() || selectedFiles.length < 4
+                    )
+                  }
                   className="w-full"
                   size="lg"
                 >
                   {isTraining ? (
                     <>
                       <Clock className="w-4 h-4 mr-2 animate-spin" />
-                      Training Model...
+                      {useExistingModel ? 'Adding Model...' : 'Training Model...'}
                     </>
                   ) : (
                     <>
                       <Zap className="w-4 h-4 mr-2" />
-                      Start Training
+                      {useExistingModel ? 'Add Existing Model' : 'Start Training'}
                     </>
                   )}
                 </Button>
