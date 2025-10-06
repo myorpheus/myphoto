@@ -6,8 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabaseService } from '@/services/supabase';
-import { Eye, EyeOff, Camera, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Camera, Sparkles, Bug } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  collectDiagnostics, 
+  testSupabaseConnection,
+  generateAuthDiagnosticReport,
+  logSignupAttempt 
+} from '@/utils/auth-diagnostics';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -17,8 +23,20 @@ const Login = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Diagnostic functions for debugging
+  const runDiagnostics = async () => {
+    console.log('🔬 Running authentication diagnostics...');
+    const report = await generateAuthDiagnosticReport();
+    setShowDiagnostics(true);
+    toast({
+      title: 'Diagnostic Report Generated',
+      description: 'Check the browser console for detailed information.',
+    });
+  };
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -115,7 +133,15 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      console.log('🔄 Starting signup process...', { email });
+      console.log('🔄 Starting signup process...', { email, timestamp: new Date().toISOString() });
+      console.log('🛠️ Signup configuration:', {
+        metadata: { appsource: 'PRu' },
+        email_confirmation_required: 'checking...'
+      });
+
+      // Collect diagnostic information
+      const diagnostics = collectDiagnostics();
+      console.log('📊 Environment diagnostics:', diagnostics);
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -127,26 +153,119 @@ const Login = () => {
         }
       });
 
-      console.log('📧 Signup response:', { data, error });
+      console.log('📧 Signup response:', { 
+        data: data ? {
+          user: data.user ? {
+            id: data.user.id,
+            email: data.user.email,
+            email_confirmed_at: data.user.email_confirmed_at,
+            confirmed_at: data.user.confirmed_at,
+            user_metadata: data.user.user_metadata
+          } : null,
+          session: data.session ? 'session_exists' : 'no_session'
+        } : null,
+        error: error ? {
+          message: error.message,
+          status: error.status,
+          details: error
+        } : null
+      });
 
       if (error) {
-        console.error('❌ Signup error:', error);
-        throw error;
+        console.error('❌ Signup error details:', {
+          message: error.message,
+          status: error.status,
+          name: error.name,
+          stack: error.stack
+        });
+        
+        // Enhanced error messages for common issues
+        let userFriendlyMessage = error.message;
+        if (error.message?.includes('User already registered')) {
+          userFriendlyMessage = 'An account with this email already exists. Please try signing in instead.';
+        } else if (error.message?.includes('Invalid email')) {
+          userFriendlyMessage = 'Please enter a valid email address.';
+        } else if (error.message?.includes('Password')) {
+          userFriendlyMessage = 'Password must be at least 6 characters long.';
+        }
+        
+        throw new Error(userFriendlyMessage);
       }
 
       if (data.user) {
-        console.log('✅ User created successfully:', data.user.id);
-        toast({
-          title: 'Account created successfully!',
-          description: 'Welcome to Headshots AI. You can now start creating professional headshots.',
+        console.log('✅ User created successfully:', {
+          id: data.user.id,
+          email: data.user.email,
+          confirmed_at: data.user.confirmed_at,
+          email_confirmed_at: data.user.email_confirmed_at,
+          metadata: data.user.user_metadata
         });
-        navigate('/home');
+        
+        // Log successful signup attempt
+        logSignupAttempt({
+          email,
+          timestamp: new Date().toISOString(),
+          success: true,
+          userReturned: true,
+          sessionCreated: !!data.session,
+          emailConfirmed: !!(data.user.confirmed_at || data.user.email_confirmed_at),
+          metadata: { appsource: 'PRu' }
+        });
+        
+        // Check if email confirmation is required
+        if (!data.user.confirmed_at && !data.user.email_confirmed_at) {
+          console.log('📮 Email confirmation required - user will need to check email');
+          toast({
+            title: 'Account created successfully!',
+            description: 'Please check your email to verify your account before signing in.',
+          });
+          // Switch to login tab to prompt user to sign in after verification
+          setActiveTab('login');
+        } else {
+          console.log('🎉 User immediately confirmed - redirecting to home');
+          toast({
+            title: 'Account created successfully!',
+            description: 'Welcome to Headshots AI. You can now start creating professional headshots.',
+          });
+          navigate('/home');
+        }
       } else {
-        console.warn('⚠️ No user returned from signup');
-        throw new Error('Account creation failed - no user returned');
+        console.warn('⚠️ No user returned from signup:', data);
+        
+        // Log failed signup attempt
+        logSignupAttempt({
+          email,
+          timestamp: new Date().toISOString(),
+          success: false,
+          userReturned: false,
+          sessionCreated: !!data.session,
+          emailConfirmed: false,
+          metadata: { appsource: 'PRu' },
+          error: 'No user returned from Supabase'
+        });
+        
+        throw new Error('Account creation failed - no user returned from Supabase');
       }
     } catch (error: any) {
-      console.error('💥 Signup failed:', error);
+      console.error('💥 Signup failed:', {
+        error,
+        message: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Log failed signup attempt
+      logSignupAttempt({
+        email,
+        timestamp: new Date().toISOString(),
+        success: false,
+        userReturned: false,
+        sessionCreated: false,
+        emailConfirmed: false,
+        metadata: { appsource: 'PRu' },
+        error: error.message
+      });
+      
       toast({
         title: 'Sign up failed',
         description: error.message || 'Failed to create account. Please try again.',
@@ -313,7 +432,7 @@ const Login = () => {
             </TabsContent>
           </Tabs>
           
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-2">
             <Button 
               variant="ghost" 
               onClick={() => navigate('/')}
@@ -321,6 +440,21 @@ const Login = () => {
             >
               ← Back to Home
             </Button>
+            
+            {/* Diagnostic button for debugging (development only) */}
+            {import.meta.env.DEV && (
+              <div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={runDiagnostics}
+                  className="text-xs opacity-70 hover:opacity-100"
+                >
+                  <Bug className="h-3 w-3 mr-1" />
+                  Run Diagnostics
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
