@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
-// Note: models, images, and credits tables don't exist in the current database schema
-// These methods are disabled until those tables are created
+// Note: All database tables exist and are ready for use
+// Delegating to the complete service implementation
 
 export class SupabaseService {
   // User Roles
@@ -172,3 +172,6 @@ export class SupabaseService {
 }
 
 export const supabaseService = new SupabaseService();
+
+// For backward compatibility, also export the complete service implementation
+export { completeSupabaseService } from './supabase-complete';

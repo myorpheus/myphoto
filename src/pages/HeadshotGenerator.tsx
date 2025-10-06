@@ -8,7 +8,8 @@ import { HeadshotGallery } from '@/components/HeadshotGallery';
 import { GenerationProgress } from '@/components/GenerationProgress';
 import { useToast } from '@/hooks/use-toast';
 import { completeSupabaseService } from '@/services/supabase-complete';
-import { astriaService } from '@/services/astria';
+import { supabase } from '@/integrations/supabase/client';
+import { filesToBase64 } from '@/utils/file-utils';
 import { ArrowLeft, Crown, Coins } from 'lucide-react';
 
 type GenerationStep = 'upload' | 'training' | 'generating' | 'completed';
@@ -68,13 +69,35 @@ const HeadshotGenerator = () => {
       // Create model name
       const modelName = `headshots-${Date.now()}`;
 
-      // Train model with Astria
-      const astriaModel = await astriaService.trainModel({
-        name: modelName,
-        images: files,
-        steps: 500,
-        face_crop: true
+      // Get user session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('User not authenticated');
+
+      // Convert images to base64 for secure transmission
+      const imageBase64 = await filesToBase64(files);
+
+      // Train model with secure edge function
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/generate-headshot`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'train_model',
+          name: modelName,
+          images: imageBase64,
+          steps: 500,
+          face_crop: true
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to start training');
+      }
+
+      const astriaModel = await response.json();
 
       // Save model to database
       const dbModel = await completeSupabaseService.createModel({
@@ -119,7 +142,28 @@ const HeadshotGenerator = () => {
 
     const checkStatus = async (): Promise<void> => {
       try {
-        const astriaModel = await astriaService.getModel(astriaModelId);
+        // Get user session for authentication
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error('User not authenticated');
+
+        // Check model status via edge function
+        const response = await fetch(`${supabase.supabaseUrl}/functions/v1/generate-headshot`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'check_status',
+            model_id: astriaModelId
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to check model status');
+        }
+
+        const astriaModel = await response.json();
         
         // Update database model status
         await completeSupabaseService.updateModel(dbModelId, {
@@ -166,26 +210,42 @@ const HeadshotGenerator = () => {
 
       for (const prompt of prompts) {
         try {
-          const astriaImages = await astriaService.generateImages({
-            modelId: astriaModelId,
-            prompt,
-            num_images: 1,
-            steps: 50,
-            cfg_scale: 7
+          // Get user session for authentication
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session) throw new Error('User not authenticated');
+
+          // Generate images via secure edge function
+          const response = await fetch(`${supabase.supabaseUrl}/functions/v1/generate-headshot`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              action: 'generate_image',
+              model_id: dbModelId,
+              prompt: prompt,
+              num_images: 1,
+              steps: 50,
+              cfg_scale: 7
+            }),
           });
 
-          // Save generated images to database
-          for (const astriaImage of astriaImages) {
-            const dbImage = await completeSupabaseService.createImage({
-              model_id: dbModelId,
-              user_id: user.id,
-              astria_image_id: astriaImage.id,
-              url: astriaImage.url,
-              prompt,
-              status: 'completed'
-            });
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to generate image');
+          }
 
-            generatedImages.push(astriaImage.url);
+          const astriaImages = await response.json();
+          
+          // astriaImages is now an array of image objects from the edge function
+
+          // The edge function already saves images to database and returns URLs
+          // Extract URLs from the response
+          if (astriaImages && astriaImages.length > 0) {
+            for (const astriaImage of astriaImages) {
+              generatedImages.push(astriaImage.url);
+            }
           }
         } catch (error) {
           console.error('Error generating image with prompt:', prompt, error);

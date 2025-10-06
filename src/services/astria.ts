@@ -1,7 +1,13 @@
+// ⚠️ DEPRECATED: This file is no longer used for security reasons
+// Direct client-side API calls to Astria have been replaced with secure edge functions
+// See /supabase/functions/generate-headshot/ for the new implementation
+// This file is kept only for type definitions
+
 import axios from 'axios';
 
 const ASTRIA_API_BASE_URL = 'https://api.astria.ai/tunes/';
-const ASTRIA_API_KEY = import.meta.env.VITE_ASTRIA_API_KEY;
+// ⚠️ SECURITY: API key moved to server-side edge functions
+// const ASTRIA_API_KEY = import.meta.env.VITE_ASTRIA_API_KEY;
 
 export interface AstriaModel {
   id: number;

@@ -8,7 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Upload, Zap, Clock, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { completeSupabaseService } from '@/services/supabase-complete';
-import { astriaService } from '@/services/astria';
+import { supabase } from '@/integrations/supabase/client';
+import { filesToBase64 } from '@/utils/file-utils';
 
 const TrainModel = () => {
   const [models, setModels] = useState<any[]>([]);
@@ -107,40 +108,46 @@ const TrainModel = () => {
 
       console.log('🚀 Starting model training:', modelName);
       
-      // Start Astria model training
+      // Get user session for authentication
       setTrainingProgress(20);
-      const astriaModel = await astriaService.trainModel({
-        name: modelName,
-        images: selectedFiles,
-        steps: 500,
-        face_crop: true
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('User not authenticated');
+
+      // Convert images to base64 for secure transmission
+      const imageBase64 = await filesToBase64(selectedFiles);
+
+      // Start Astria model training via secure edge function
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/generate-headshot`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'train_model',
+          name: modelName,
+          images: imageBase64,
+          steps: 500,
+          face_crop: true
+        }),
       });
 
-      console.log('✅ Astria model created:', astriaModel);
-      setTrainingProgress(40);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to start training');
+      }
 
-      // Save model to database
-      const dbModel = await completeSupabaseService.createModel({
-        user_id: user.id,
-        astria_model_id: astriaModel.id,
-        name: modelName,
-        status: astriaModel.status
-      });
+      const astriaModel = await response.json();
 
-      console.log('✅ Database model saved:', dbModel);
+      console.log('✅ Astria model created via edge function:', astriaModel);
       setTrainingProgress(60);
 
-      // Save uploaded samples
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
-        await completeSupabaseService.createSample({
-          user_id: user.id,
-          model_id: dbModel.id,
-          file_name: file.name,
-          file_path: `samples/${user.id}/${dbModel.id}/${file.name}`,
-          file_size: file.size
-        });
-      }
+      // The edge function already handles database model creation and sample saving
+      // The response contains the created database model
+      const dbModel = astriaModel.model; // Edge function returns { model: dbModel, astriaModel: astriaData }
+      
+      console.log('✅ Database model saved via edge function:', dbModel);
+      setTrainingProgress(80);
 
       setTrainingProgress(100);
       
