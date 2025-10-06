@@ -314,10 +314,11 @@ serve(async (req) => {
           console.log("🔍 API request completed");
         } catch (fetchError) {
           console.error("❌ Network error calling Astria API:", fetchError);
+          const errMsg = fetchError instanceof Error ? fetchError.message : 'Unknown error';
           return new Response(
             JSON.stringify({ 
               error: "Network error connecting to Astria API", 
-              details: fetchError.message,
+              details: errMsg,
               apiKeyConfigured: !!ASTRIA_API_KEY
             }),
             { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -344,7 +345,8 @@ serve(async (req) => {
             }
           } catch (parseError) {
             console.error("❌ Error parsing Astria API error response:", parseError);
-            errorText = `Failed to parse error response: ${parseError.message}`;
+            const errMsg = parseError instanceof Error ? parseError.message : 'Unknown error';
+            errorText = `Failed to parse error response: ${errMsg}`;
           }
           
           console.error("❌ Complete Astria API error details:", {
@@ -388,10 +390,11 @@ serve(async (req) => {
           console.log("✅ Response parsed successfully");
         } catch (parseError) {
           console.error("❌ Failed to parse successful response:", parseError);
+          const errMsg = parseError instanceof Error ? parseError.message : 'Unknown error';
           return new Response(
             JSON.stringify({ 
               error: "Invalid response format from Astria API", 
-              details: parseError.message,
+              details: errMsg,
               apiKeyConfigured: !!ASTRIA_API_KEY
             }),
             { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

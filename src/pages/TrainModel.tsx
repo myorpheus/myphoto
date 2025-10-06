@@ -83,7 +83,7 @@ const TrainModel = () => {
       console.log('🔍 Session expires at:', new Date(session.expires_at * 1000));
       console.log('🔄 Calling edge function for model list...');
       
-      const apiUrl = `${supabase.supabaseUrl}/functions/v1/generate-headshot`;
+      const apiUrl = `https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/generate-headshot`;
       console.log('🌐 API URL:', apiUrl);
       
       const requestPayload = { action: 'list_models' };
@@ -365,7 +365,7 @@ const TrainModel = () => {
         const imageBase64 = await filesToBase64(selectedFiles);
 
         // Start Astria model training via secure edge function
-        const response = await fetch(`${supabase.supabaseUrl}/functions/v1/generate-headshot`, {
+        const response = await fetch(`https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/generate-headshot`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${session.access_token}`,

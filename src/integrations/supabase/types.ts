@@ -1311,6 +1311,10 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: string
       }
+      validate_astria_integration: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       app_role: "super_admin" | "admin" | "creator" | "user"
