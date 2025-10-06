@@ -43,7 +43,7 @@ const Login = () => {
     const checkUser = async () => {
       const user = await supabaseService.getCurrentUser();
       if (user) {
-        navigate('/home');
+        navigate('/home', { replace: true });
       }
     };
     checkUser();
@@ -51,7 +51,7 @@ const Login = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        navigate('/home');
+        navigate('/home', { replace: true });
       }
     });
 
@@ -87,7 +87,7 @@ const Login = () => {
           title: 'Welcome back!',
           description: 'Successfully signed in to your account',
         });
-        navigate('/home');
+        navigate('/home', { replace: true });
       }
     } catch (error: any) {
       toast({
@@ -227,7 +227,7 @@ const Login = () => {
             title: 'Account created successfully!',
             description: 'Welcome to Headshots AI. You can now start creating professional headshots.',
           });
-          navigate('/home');
+          navigate('/home', { replace: true });
         }
       } else {
         console.warn('⚠️ No user returned from signup:', data);
