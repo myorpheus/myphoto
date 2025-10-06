@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Upload, Zap, Clock, CheckCircle, AlertCircle, Trash2, Download } from 'lucide-react';
+import { ArrowLeft, Upload, Zap, Clock, CheckCircle, AlertCircle, Trash2, Download, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { completeSupabaseService } from '@/services/supabase-complete';
 import { supabase } from '@/integrations/supabase/client';
@@ -699,6 +699,47 @@ const TrainModel = () => {
           </TabsContent>
 
           <TabsContent value="existing" className="space-y-6">
+            {/* Refresh Models Header */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold">Your Trained Models</h3>
+                <p className="text-sm text-muted-foreground">Models available for generating headshots</p>
+              </div>
+              <Button
+                onClick={async () => {
+                  console.log('🔄 Refreshing both user models and Astria models...');
+                  
+                  try {
+                    // Refresh both user models from database AND Astria models from API
+                    await Promise.all([
+                      loadUserModels(), 
+                      loadAstriaModels()
+                    ]);
+                    
+                    toast({
+                      title: 'Models Synced Successfully',
+                      description: `Updated your models and found ${astriaModels.length} models from Astria account`,
+                    });
+                    
+                    console.log('✅ Model sync completed');
+                  } catch (error) {
+                    console.error('❌ Error during model sync:', error);
+                    toast({
+                      title: 'Sync Failed',
+                      description: 'Failed to refresh models. Please try again.',
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+                disabled={isLoadingAstriaModels || isLoading}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${(isLoadingAstriaModels || isLoading) ? 'animate-spin' : ''}`} />
+                {(isLoadingAstriaModels || isLoading) ? 'Syncing...' : 'Sync Models'}
+              </Button>
+            </div>
             <div className="grid gap-4">
               {models.length === 0 ? (
                 <Card>
