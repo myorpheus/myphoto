@@ -363,6 +363,33 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_flags: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          feature_name: string
+          id: number
+          is_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          feature_name: string
+          id?: number
+          is_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          feature_name?: string
+          id?: number
+          is_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       images: {
         Row: {
           astria_image_id: number | null
@@ -1234,6 +1261,10 @@ export type Database = {
         Args: { _user_id?: string }
         Returns: boolean
       }
+      is_feature_enabled: {
+        Args: { feature_name: string }
+        Returns: boolean
+      }
       is_super_admin: {
         Args: { _user_id?: string }
         Returns: boolean
@@ -1263,6 +1294,10 @@ export type Database = {
       set_event_featured: {
         Args: { p_event_id: string; p_is_featured: boolean }
         Returns: undefined
+      }
+      set_feature_enabled: {
+        Args: { enabled: boolean; feature_name: string }
+        Returns: boolean
       }
       uid: {
         Args: Record<PropertyKey, never>
