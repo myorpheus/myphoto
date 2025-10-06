@@ -87,88 +87,284 @@ export class CompletSupabaseService {
     return roles.includes('admin') || roles.includes('super_admin');
   }
 
-  // Models - TEMPORARILY DISABLED until migration is run
+  // Models - ENABLED (Migration completed)
   async createModel(model: ModelInsert): Promise<Model> {
-    console.warn('Models table not yet created. Please run the database migration first.');
-    throw new Error('Models table not yet created. Please run the database migration first.');
+    const { data, error } = await supabase
+      .from('models')
+      .insert(model)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating model:', error);
+      throw new Error('Failed to create model');
+    }
+
+    return data;
   }
 
   async getModel(id: number): Promise<Model | null> {
-    console.warn('Models table not yet created. Please run the database migration first.');
-    return null;
+    const { data, error } = await supabase
+      .from('models')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // No rows returned
+      }
+      console.error('Error fetching model:', error);
+      throw new Error('Failed to fetch model');
+    }
+
+    return data;
   }
 
   async getUserModels(userId: string): Promise<Model[]> {
-    console.warn('Models table not yet created. Please run the database migration first.');
-    return [];
+    const { data, error } = await supabase
+      .from('models')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching user models:', error);
+      throw new Error('Failed to fetch user models');
+    }
+
+    return data || [];
   }
 
   async updateModel(id: number, updates: ModelUpdate): Promise<Model | null> {
-    console.warn('Models table not yet created. Please run the database migration first.');
-    return null;
+    const { data, error } = await supabase
+      .from('models')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating model:', error);
+      throw new Error('Failed to update model');
+    }
+
+    return data;
   }
 
   async deleteModel(id: number): Promise<boolean> {
-    console.warn('Models table not yet created. Please run the database migration first.');
-    return false;
+    const { error } = await supabase
+      .from('models')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting model:', error);
+      return false;
+    }
+
+    return true;
   }
 
-  // Images - TEMPORARILY DISABLED until migration is run
+  // Images - ENABLED (Migration completed)
   async createImage(image: ImageInsert): Promise<Image> {
-    console.warn('Images table not yet created. Please run the database migration first.');
-    throw new Error('Images table not yet created. Please run the database migration first.');
+    const { data, error } = await supabase
+      .from('images')
+      .insert({
+        ...image,
+        status: image.status || 'pending'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating image:', error);
+      throw new Error('Failed to create image');
+    }
+
+    return data;
   }
 
   async getModelImages(modelId: number): Promise<Image[]> {
-    console.warn('Images table not yet created. Please run the database migration first.');
-    return [];
+    const { data, error } = await supabase
+      .from('images')
+      .select('*')
+      .eq('model_id', modelId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching model images:', error);
+      throw new Error('Failed to fetch model images');
+    }
+
+    return data || [];
   }
 
   async getUserImages(userId: string): Promise<Image[]> {
-    console.warn('Images table not yet created. Please run the database migration first.');
-    return [];
+    const { data, error } = await supabase
+      .from('images')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching user images:', error);
+      throw new Error('Failed to fetch user images');
+    }
+
+    return data || [];
   }
 
   async updateImageStatus(id: number, status: string, url?: string): Promise<Image | null> {
-    console.warn('Images table not yet created. Please run the database migration first.');
-    return null;
+    const updates: any = { status };
+    if (url) updates.url = url;
+
+    const { data, error } = await supabase
+      .from('images')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating image status:', error);
+      throw new Error('Failed to update image status');
+    }
+
+    return data;
   }
 
-  // Credits - TEMPORARILY DISABLED until migration is run
+  // Credits - ENABLED (Migration completed)
   async getUserCredits(userId: string): Promise<number> {
-    console.warn('Credits table not yet created. Please run the database migration first.');
-    return 0;
+    const { data, error } = await supabase
+      .from('credits')
+      .select('credits')
+      .eq('user_id', userId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No credits row exists, return 0
+        return 0;
+      }
+      console.error('Error fetching user credits:', error);
+      throw new Error('Failed to fetch user credits');
+    }
+
+    return data?.credits || 0;
   }
 
   async updateUserCredits(userId: string, credits: number): Promise<boolean> {
-    console.warn('Credits table not yet created. Please run the database migration first.');
-    return false;
+    const { error } = await supabase
+      .from('credits')
+      .upsert({
+        user_id: userId,
+        credits: credits,
+        updated_at: new Date().toISOString()
+      });
+
+    if (error) {
+      console.error('Error updating user credits:', error);
+      return false;
+    }
+
+    return true;
   }
 
   async decrementUserCredits(userId: string, amount: number = 1): Promise<boolean> {
-    console.warn('Credits table not yet created. Please run the database migration first.');
-    return false;
+    const currentCredits = await this.getUserCredits(userId);
+    
+    if (currentCredits < amount) {
+      throw new Error('Insufficient credits');
+    }
+
+    const { error } = await supabase
+      .from('credits')
+      .update({
+        credits: currentCredits - amount,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error decrementing user credits:', error);
+      return false;
+    }
+
+    return true;
   }
 
   async incrementUserCredits(userId: string, amount: number = 1): Promise<boolean> {
-    console.warn('Credits table not yet created. Please run the database migration first.');
-    return false;
+    const currentCredits = await this.getUserCredits(userId);
+
+    const { error } = await supabase
+      .from('credits')
+      .upsert({
+        user_id: userId,
+        credits: currentCredits + amount,
+        updated_at: new Date().toISOString()
+      });
+
+    if (error) {
+      console.error('Error incrementing user credits:', error);
+      return false;
+    }
+
+    return true;
   }
 
-  // Samples - TEMPORARILY DISABLED until migration is run
+  // Samples - ENABLED (Migration completed)
   async getUserSamples(userId: string): Promise<Sample[]> {
-    console.warn('Samples table not yet created. Please run the database migration first.');
-    return [];
+    const { data, error } = await supabase
+      .from('samples')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching user samples:', error);
+      throw new Error('Failed to fetch user samples');
+    }
+
+    return data || [];
   }
 
   async createSample(sample: Omit<Sample, 'id' | 'created_at'>): Promise<Sample> {
-    console.warn('Samples table not yet created. Please run the database migration first.');
-    throw new Error('Samples table not yet created. Please run the database migration first.');
+    const { data, error } = await supabase
+      .from('samples')
+      .insert(sample)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating sample:', error);
+      throw new Error('Failed to create sample');
+    }
+
+    return data;
   }
 
   async deleteUserSamples(userId: string, modelId?: number): Promise<boolean> {
-    console.warn('Samples table not yet created. Please run the database migration first.');
-    return false;
+    let query = supabase
+      .from('samples')
+      .delete()
+      .eq('user_id', userId);
+
+    if (modelId) {
+      query = query.eq('model_id', modelId);
+    }
+
+    const { error } = await query;
+
+    if (error) {
+      console.error('Error deleting user samples:', error);
+      return false;
+    }
+
+    return true;
   }
 
   // Authentication helpers
