@@ -537,7 +537,7 @@ const TrainModel = () => {
                     </Select>
                     {selectedExistingModel && (
                       <div className="text-xs text-muted-foreground">
-                        Status: {selectedExistingModel.status} • Created: {selectedExistingModel.created_at ? new Date(selectedExistingModel.created_at).toLocaleDateString() : 'Unknown'}
+                        Status: {selectedExistingModel.status} • Last Updated: {selectedExistingModel.updated_at ? new Date(selectedExistingModel.updated_at).toLocaleDateString() : 'Unknown'}
                       </div>
                     )}
                   </div>
@@ -689,8 +689,7 @@ const TrainModel = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="flex justify-between items-center text-sm text-muted-foreground">
-                        <span>Created: {new Date(model.created_at).toLocaleDateString()}</span>
-                        <span>Updated: {new Date(model.updated_at).toLocaleDateString()}</span>
+                        <span>Last Updated: {new Date(model.updated_at).toLocaleDateString()}</span>
                       </div>
                     </CardContent>
                   </Card>
