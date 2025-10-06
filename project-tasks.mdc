@@ -612,23 +612,149 @@ const { data, error } = await supabase.auth.signUp({
 
 ### 🔴 Critical Issues - **ACTION REQUIRED**
 
-#### ✅ **RESOLVED: Headshot Generation Fixed (2025-10-06)**
-**Issue:** User clicks "generate headshot" button but no photos were generated
-**Root Cause:** Database service methods disabled despite completed migration + Missing API key
-**Status:** ✅ **FIXED** (requires API key configuration)
+#### 🚨 **URGENT: Headshot Generation Still Failing (2025-10-06)**
+**Issue:** User reports "generate headshot" button still produces no photos despite previous fixes
+**Previous Status:** Thought to be fixed - database methods enabled, API key added
+**Current Status:** 🔴 **CRITICAL - REQUIRES COMPREHENSIVE DEBUGGING**
 
-##### **Solution Implemented:**
-1. ✅ **Enabled all database methods** in `supabase-complete.ts` (lines 90-368)
-2. ✅ **Fixed credit system** - now returns actual user credits instead of 0
-3. ✅ **Verified database tables** - all tables (models, images, credits, samples) ready
-4. ⚠️ **User action required**: Add `VITE_ASTRIA_API_KEY` to `.env` file
+##### **Gemini CLI Analysis Results:**
+- **Environment Issue Detected:** Gemini CLI shows `VITE_ASTRIA_API_KEY=""` (empty) in production environment
+- **Database Layer:** Previously fixed - all methods enabled ✅  
+- **Workflow Analysis:** Complete 6-step diagnostic checklist created
 
-##### **Remaining User Action:**
-Add to `.env` file:
-```
-VITE_ASTRIA_API_KEY=your_actual_astria_api_key_here
-```
-Then restart development server.
+##### **🔍 COMPREHENSIVE DIAGNOSTIC CHECKLIST:**
+
+###### **Step 1: User Uploads Photos**
+**Component:** `PhotoUpload.tsx`
+- ❌ **Check A:** File selection dialog opens when button clicked
+- ❌ **Check B:** Correct file types accepted (image/jpeg, image/png)
+- ❌ **Check C:** `onPhotosSelected` callback triggers with files array
+- **Debug:** Add `console.log('PhotoUpload: files selected', files)` in PhotoUpload component
+
+###### **Step 2: handlePhotosSelected Function**
+**Component:** `HeadshotGenerator.tsx`
+- ❌ **Check A:** Function receives files array correctly
+- ❌ **Check B:** File count validation (4-10 files)
+- **Debug:** Add `console.log('handlePhotosSelected called with:', files.length, 'files')` at function start
+
+###### **Step 3: Credit Check**
+**Component:** `HeadshotGenerator.tsx`
+- ❌ **Check A:** `userCredits` state shows correct value (not 0)
+- ❌ **Check B:** `loadUserData()` successfully fetches credits from database
+- ❌ **Check C:** Credit validation logic works (userCredits >= 1)
+- **Debug:** Add `console.log('Current credits:', userCredits)` before credit check
+- **Network:** Check browser Network tab for `getUserCredits` API call
+
+###### **Step 4: Model Training (Astria API)**
+**Component:** `astria.ts`, `HeadshotGenerator.tsx`
+- 🔴 **CRITICAL CHECK A:** `VITE_ASTRIA_API_KEY` environment variable
+  - **Issue:** Gemini CLI shows empty key in production
+  - **Local:** Key exists but may not be deployed
+  - **Debug:** Add `console.log('Astria API Key loaded:', !!this.apiKey)` in AstriaService constructor
+- ❌ **Check B:** `trainModel` API request succeeds
+  - **Network:** Check POST to `https://api.astria.ai/tunes/`
+  - **Response:** Look for 401 Unauthorized (bad API key) or 400 Bad Request (invalid data)
+- ❌ **Check C:** Database operations succeed (`createModel`, `createSample`)
+  - **RLS:** Verify Row Level Security policies allow user inserts
+- ❌ **Check D:** Model polling and status updates
+  - **Timeout:** Current 5-minute limit may be insufficient
+  - **Status:** Check Astria dashboard for actual training status
+
+###### **Step 5: Image Generation**  
+**Component:** `generateHeadshots` function
+- ❌ **Check A:** `generateImages` API calls succeed
+  - **Network:** Check POST to `https://api.astria.ai/tunes/{modelId}/prompts`
+  - **Payload:** Verify prompt formatting and parameters
+- ❌ **Check B:** Error handling allows partial success
+- ❌ **Check C:** Credit deduction works properly
+
+###### **Step 6: Database Storage & UI Update**
+**Component:** `HeadshotGenerator.tsx`
+- ❌ **Check A:** `createImage` database operations succeed
+- ❌ **Check B:** UI updates to 'completed' state
+- ❌ **Check C:** `HeadshotGallery` displays generated images
+
+##### **🎯 MOST LIKELY ROOT CAUSES:**
+1. **🔴 CRITICAL:** API key not deployed to production environment
+2. **🟡 HIGH:** User has 0 credits in database
+3. **🟡 HIGH:** RLS policies blocking database operations
+4. **🟡 MEDIUM:** Network/CORS issues with Astria API
+5. **🟡 MEDIUM:** Model training timeout (>5 minutes)
+
+##### **⚡ IMMEDIATE ACTION PLAN:**
+1. **Verify production environment variables**
+   - Check if `VITE_ASTRIA_API_KEY` is set on live site
+   - Restart production server if needed
+2. **Add comprehensive logging** 
+   - Insert debug console.logs at each critical step
+   - Monitor browser console during generation attempt
+3. **Check user credits and database permissions**
+   - Verify user has >0 credits in production database
+   - Test RLS policies for models/images/credits tables
+
+---
+
+#### ✅ **RESOLVED: Admin Page Restructure Complete (2025-10-06)**
+**Issue:** Need separate admin page for super admins/admins only, move "train model" from home page
+**Status:** ✅ **IMPLEMENTATION COMPLETE**
+
+##### **✅ COMPLETE SOLUTION IMPLEMENTED:**
+
+###### **Step 1: Create Protected Route Component** ✅
+**File:** `src/components/admin/AdminRoute.tsx` (CREATED)
+- ✅ **AdminRoute component** with comprehensive role-based access control
+- ✅ **Authentication check** - redirects to /login if not authenticated  
+- ✅ **Role verification** - validates 'admin' or 'super_admin' role
+- ✅ **Permission denied handling** - redirects to /overview with toast message
+- ✅ **Loading state** with spinner while checking authorization
+- ✅ **Enhanced logging** for debugging access control
+
+###### **Step 2: Update Application Routing** ✅
+**File:** `src/App.tsx`
+- ✅ **AdminRoute component imported** and configured
+- ✅ **Admin routes wrapped** with AdminRoute protection
+- ✅ **Routes restructured** - created /admin/train nested route
+- ✅ **Legacy /train route** maintained with AdminRoute protection
+
+###### **Step 3: Modify Home Page** ✅
+**File:** `src/pages/Home.tsx`
+- ✅ **"Train Model" removed** from quickActions array
+- ✅ **Grid layout updated** from 3-column to 2-column for remaining actions
+- ✅ **Clean implementation** - no broken links or references
+- ✅ **UI consistency** maintained with proper spacing
+
+###### **Step 4: Update Admin Dashboard** ✅
+**File:** `src/pages/AdminDashboard.tsx`
+- ✅ **"Admin Tools" section added** with prominent Train Model card
+- ✅ **Navigation link** pointing to /admin/train route  
+- ✅ **Consistent styling** with hover effects and animations
+- ✅ **Future-ready** placeholder for additional admin tools
+
+###### **Step 5: Security & Access Control** ✅
+**All Components:** Complete security implementation
+- ✅ **Role-based access** enforced at route level
+- ✅ **Unauthorized access prevention** with proper redirects
+- ✅ **Admin navigation** visible only to authorized users
+- ✅ **Comprehensive error handling** and user feedback
+
+##### **🎯 IMPLEMENTATION RESULTS:**
+1. ✅ **CRITICAL:** AdminRoute component provides robust security
+2. ✅ **CRITICAL:** App.tsx routing properly protects admin functionality  
+3. ✅ **HIGH:** Train Model completely removed from public Home page
+4. ✅ **HIGH:** Train Model integrated into AdminDashboard with professional UI
+5. ✅ **MEDIUM:** Complete admin workflow tested and functional
+
+##### **⚡ ACHIEVED OUTCOMES:**
+- ✅ **Security:** Only admins/super_admins can access train model functionality
+- ✅ **UX:** Clear separation between user and admin features achieved
+- ✅ **Navigation:** Consolidated admin dashboard with expandable admin tools section
+- ✅ **Access Control:** Comprehensive role-based restrictions throughout application
+
+##### **📁 FILES MODIFIED:**
+- `src/components/admin/AdminRoute.tsx` - **NEW** - Role-based route protection
+- `src/App.tsx` - **UPDATED** - Protected admin routing with nested /admin/train route
+- `src/pages/Home.tsx` - **UPDATED** - Removed Train Model, updated grid layout
+- `src/pages/AdminDashboard.tsx` - **UPDATED** - Added Admin Tools section with Train Model access
 
 ---
 

@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { supabaseService } from '@/services/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Users, Shield, DollarSign, Settings } from 'lucide-react';
+import { ArrowLeft, Users, Shield, DollarSign, Settings, Camera, ArrowRight } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -164,6 +164,56 @@ const AdminDashboard = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Admin Tools */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-6">Admin Tools</h2>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="group cursor-pointer hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 border-border hover:border-primary/50">
+              <CardHeader>
+                <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <Camera className="h-7 w-7 text-primary" />
+                </div>
+                <CardTitle className="group-hover:text-primary transition-colors">
+                  Train Model
+                </CardTitle>
+                <CardDescription>
+                  Train new AI models for headshot generation (Admin Only)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-between group/btn hover:bg-primary/10"
+                  onClick={() => navigate('/admin/train')}
+                >
+                  Access Tool
+                  <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Placeholder for future admin tools */}
+            <Card className="opacity-50 border-dashed">
+              <CardHeader>
+                <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center mb-4">
+                  <Settings className="h-7 w-7 text-muted-foreground" />
+                </div>
+                <CardTitle className="text-muted-foreground">
+                  More Tools Coming Soon
+                </CardTitle>
+                <CardDescription>
+                  Additional admin functionality will be added here
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="ghost" disabled className="w-full">
+                  Coming Soon
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Admin Tabs */}

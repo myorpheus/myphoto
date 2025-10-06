@@ -86,14 +86,6 @@ const Home = () => {
       available: true
     },
     {
-      title: "Train Model",
-      description: "Train your personal AI model",
-      icon: Camera,
-      action: () => navigate('/train'),
-      gradient: "from-accent to-primary",
-      available: true
-    },
-    {
       title: "View Gallery",
       description: "Browse your generated images",
       icon: Image,
@@ -178,7 +170,7 @@ const Home = () => {
         {/* Quick Actions */}
         <div className="mb-16">
           <h2 className="text-3xl font-bold mb-6">Quick Actions</h2>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 gap-6">
             {quickActions.map((action, index) => (
               <Card 
                 key={action.title}

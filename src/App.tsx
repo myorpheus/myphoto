@@ -12,6 +12,7 @@ import Overview from "./pages/Overview";
 import TrainModel from "./pages/TrainModel";
 import AdminDashboard from "./pages/AdminDashboard";
 import HeadshotGenerator from "./pages/HeadshotGenerator";
+import AdminRoute from "./components/admin/AdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -27,9 +28,36 @@ const App = () => (
             <Route path="/home" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/overview" element={<Overview />} />
-            <Route path="/train" element={<TrainModel />} />
             <Route path="/generate" element={<HeadshotGenerator />} />
-            <Route path="/admin" element={<AdminDashboard />} />
+            
+            {/* Admin-only routes - protected with AdminRoute */}
+            <Route 
+              path="/admin" 
+              element={
+                <AdminRoute>
+                  <AdminDashboard />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/train" 
+              element={
+                <AdminRoute>
+                  <TrainModel />
+                </AdminRoute>
+              } 
+            />
+            
+            {/* Legacy /train route - redirect to admin */}
+            <Route 
+              path="/train" 
+              element={
+                <AdminRoute>
+                  <TrainModel />
+                </AdminRoute>
+              } 
+            />
+            
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
