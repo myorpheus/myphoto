@@ -28,6 +28,22 @@ const TrainModel = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Debug: Monitor button disabled state
+  useEffect(() => {
+    const buttonDisabled = isTraining || 
+      (useExistingModel 
+        ? !selectedExistingModel || (selectedExistingModel?.status && selectedExistingModel.status !== 'trained' && selectedExistingModel.status !== 'finished')
+        : !modelName.trim() || selectedFiles.length < 4
+      );
+    
+    console.log('🔍 Button disabled state changed:', buttonDisabled);
+    console.log('  - isTraining:', isTraining);
+    console.log('  - useExistingModel:', useExistingModel);
+    console.log('  - modelName:', modelName);
+    console.log('  - selectedFiles.length:', selectedFiles.length);
+    console.log('  - selectedExistingModel:', selectedExistingModel?.name || 'none');
+  }, [isTraining, useExistingModel, modelName, selectedFiles.length, selectedExistingModel]);
+
   useEffect(() => {
     loadUserModels();
     loadAstriaModels();
@@ -272,9 +288,16 @@ const TrainModel = () => {
   };
 
   const handleTrainModel = async () => {
+    console.log('🚀 handleTrainModel called');
+    console.log('🔍 useExistingModel:', useExistingModel);
+    console.log('🔍 modelName:', modelName);
+    console.log('🔍 selectedFiles:', selectedFiles.length);
+    console.log('🔍 selectedExistingModel:', selectedExistingModel);
+
     // Validation for new model creation
     if (!useExistingModel) {
       if (!modelName.trim()) {
+        console.log('❌ Validation failed: Model name required');
         toast({
           title: 'Model Name Required',
           description: 'Please enter a name for your model',
@@ -284,6 +307,7 @@ const TrainModel = () => {
       }
 
       if (selectedFiles.length < 4) {
+        console.log('❌ Validation failed: Insufficient photos');
         toast({
           title: 'Insufficient Photos',
           description: 'Please select at least 4 photos',
@@ -413,9 +437,19 @@ const TrainModel = () => {
 
     } catch (error) {
       console.error('❌ Training failed:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace',
+        useExistingModel,
+        modelName,
+        selectedFilesCount: selectedFiles.length,
+        selectedExistingModel: selectedExistingModel?.name || 'none'
+      });
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: 'Training Failed',
-        description: 'Failed to start model training. Please try again.',
+        description: `Failed to start model training: ${errorMessage}. Check console for details.`,
         variant: 'destructive',
       });
     } finally {
@@ -624,7 +658,20 @@ const TrainModel = () => {
 
                 {/* Action Button */}
                 <Button 
-                  onClick={handleTrainModel}
+                  onClick={() => {
+                    console.log('🔘 Button clicked!');
+                    console.log('🔍 Button disabled state check:');
+                    console.log('  - isTraining:', isTraining);
+                    console.log('  - useExistingModel:', useExistingModel);
+                    if (useExistingModel) {
+                      console.log('  - selectedExistingModel:', selectedExistingModel);
+                      console.log('  - model status:', selectedExistingModel?.status);
+                    } else {
+                      console.log('  - modelName.trim():', modelName.trim());
+                      console.log('  - selectedFiles.length:', selectedFiles.length);
+                    }
+                    handleTrainModel();
+                  }}
                   disabled={
                     isTraining || 
                     (useExistingModel 
