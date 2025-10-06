@@ -115,23 +115,38 @@ const Login = () => {
     setIsLoading(true);
 
     try {
+      console.log('🔄 Starting signup process...', { email });
+      
       const { data, error } = await supabase.auth.signUp({
         email,
-        password
+        password,
+        options: {
+          data: {
+            appsource: 'PRu'  // Required metadata per project requirements
+          }
+        }
       });
 
+      console.log('📧 Signup response:', { data, error });
+
       if (error) {
+        console.error('❌ Signup error:', error);
         throw error;
       }
 
       if (data.user) {
+        console.log('✅ User created successfully:', data.user.id);
         toast({
           title: 'Account created successfully!',
           description: 'Welcome to Headshots AI. You can now start creating professional headshots.',
         });
         navigate('/home');
+      } else {
+        console.warn('⚠️ No user returned from signup');
+        throw new Error('Account creation failed - no user returned');
       }
     } catch (error: any) {
+      console.error('💥 Signup failed:', error);
       toast({
         title: 'Sign up failed',
         description: error.message || 'Failed to create account. Please try again.',
