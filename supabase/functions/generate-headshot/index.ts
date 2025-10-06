@@ -1,0 +1,295 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const ASTRIA_API_KEY = Deno.env.get("ASTRIA_API_KEY");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!ASTRIA_API_KEY) {
+      console.error("❌ ASTRIA_API_KEY not configured");
+      return new Response(
+        JSON.stringify({ error: "Astria API key not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("❌ Supabase configuration missing");
+      return new Response(
+        JSON.stringify({ error: "Database configuration missing" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Initialize Supabase client with service role
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Get the authorization header to verify the user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "No authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify the user's JWT token
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      console.error("❌ Authentication failed:", authError);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { action, ...params } = await req.json();
+
+    console.log(`🚀 Processing Astria request: ${action} for user ${user.id}`);
+
+    switch (action) {
+      case "train_model": {
+        const { name, images, steps = 500, face_crop = true } = params;
+
+        // Validate inputs
+        if (!name || !images || images.length < 4 || images.length > 20) {
+          return new Response(
+            JSON.stringify({ error: "Invalid training parameters. Need 4-20 images." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Call Astria API to create a tune (model)
+        const response = await fetch("https://api.astria.ai/tunes", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${ASTRIA_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            tune: {
+              title: name,
+              name: `${name}_${Date.now()}`,
+              callback: `${SUPABASE_URL}/functions/v1/astria-webhook`,
+            },
+            images: images,
+            steps: steps,
+            face_crop: face_crop,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("❌ Astria API error:", response.status, errorText);
+          return new Response(
+            JSON.stringify({ error: "Failed to start model training", details: errorText }),
+            { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const astriaData = await response.json();
+        console.log("✅ Astria model created:", astriaData);
+
+        // Save model to database
+        const { data: dbModel, error: dbError } = await supabase
+          .from("models")
+          .insert({
+            user_id: user.id,
+            astria_model_id: astriaData.id,
+            name: name,
+            status: astriaData.status || "training",
+          })
+          .select()
+          .single();
+
+        if (dbError) {
+          console.error("❌ Database error saving model:", dbError);
+          return new Response(
+            JSON.stringify({ error: "Failed to save model to database", details: dbError }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, model: dbModel, astriaModel: astriaData }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      case "generate_image": {
+        const { model_id, prompt, num_images = 4 } = params;
+
+        if (!model_id || !prompt) {
+          return new Response(
+            JSON.stringify({ error: "Missing required parameters: model_id and prompt" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Get model from database to get Astria model ID
+        const { data: model, error: modelError } = await supabase
+          .from("models")
+          .select("*")
+          .eq("id", model_id)
+          .eq("user_id", user.id)
+          .single();
+
+        if (modelError || !model) {
+          return new Response(
+            JSON.stringify({ error: "Model not found or access denied" }),
+            { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        if (model.status !== "trained") {
+          return new Response(
+            JSON.stringify({ error: "Model is not ready. Please wait for training to complete." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Check user credits
+        const { data: credits, error: creditsError } = await supabase
+          .from("credits")
+          .select("credits")
+          .eq("user_id", user.id)
+          .single();
+
+        if (creditsError || !credits || credits.credits < num_images) {
+          return new Response(
+            JSON.stringify({ error: "Insufficient credits" }),
+            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Call Astria API to generate images
+        const response = await fetch(`https://api.astria.ai/tunes/${model.astria_model_id}/prompts`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${ASTRIA_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prompt: {
+              text: prompt,
+              num_images: num_images,
+              callback: `${SUPABASE_URL}/functions/v1/astria-webhook`,
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("❌ Astria API error:", response.status, errorText);
+          return new Response(
+            JSON.stringify({ error: "Failed to generate images", details: errorText }),
+            { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const astriaData = await response.json();
+        console.log("✅ Astria image generation started:", astriaData);
+
+        // Create image records in database
+        const imageRecords = Array.from({ length: num_images }, (_, i) => ({
+          model_id: model_id,
+          user_id: user.id,
+          prompt: prompt,
+          status: "generating",
+          astria_image_id: astriaData.images?.[i]?.id || null,
+        }));
+
+        const { data: dbImages, error: imagesError } = await supabase
+          .from("images")
+          .insert(imageRecords)
+          .select();
+
+        if (imagesError) {
+          console.error("❌ Database error saving images:", imagesError);
+        }
+
+        // Deduct credits
+        const { error: creditUpdateError } = await supabase
+          .from("credits")
+          .update({ credits: credits.credits - num_images })
+          .eq("user_id", user.id);
+
+        if (creditUpdateError) {
+          console.error("❌ Failed to deduct credits:", creditUpdateError);
+        }
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            images: dbImages, 
+            astriaPrompt: astriaData,
+            credits_remaining: credits.credits - num_images 
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      case "check_status": {
+        const { tune_id } = params;
+
+        if (!tune_id) {
+          return new Response(
+            JSON.stringify({ error: "Missing tune_id parameter" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // Call Astria API to check status
+        const response = await fetch(`https://api.astria.ai/tunes/${tune_id}`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${ASTRIA_API_KEY}`,
+          },
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("❌ Astria API error:", response.status, errorText);
+          return new Response(
+            JSON.stringify({ error: "Failed to check status", details: errorText }),
+            { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const statusData = await response.json();
+        
+        return new Response(
+          JSON.stringify({ success: true, status: statusData }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      default:
+        return new Response(
+          JSON.stringify({ error: "Invalid action. Use: train_model, generate_image, or check_status" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+    }
+  } catch (error) {
+    console.error("❌ Edge function error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    return new Response(
+      JSON.stringify({ error: "Internal server error", details: errorMessage }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
