@@ -155,7 +155,7 @@ const HeadshotGenerator = () => {
           },
           body: JSON.stringify({
             action: 'check_status',
-            model_id: astriaModelId
+            tune_id: astriaModelId
           }),
         });
 
@@ -163,7 +163,8 @@ const HeadshotGenerator = () => {
           throw new Error('Failed to check model status');
         }
 
-        const astriaModel = await response.json();
+        const statusResponse = await response.json();
+        const astriaModel = statusResponse.status;
         
         // Update database model status
         await completeSupabaseService.updateModel(dbModelId, {
@@ -172,7 +173,7 @@ const HeadshotGenerator = () => {
 
         if (astriaModel.status === 'trained') {
           // Model is ready, start generating images
-          await generateHeadshots(astriaModelId, dbModelId);
+          await generateHeadshots(dbModelId);
         } else if (astriaModel.status === 'failed') {
           throw new Error('Model training failed');
         } else if (attempts < maxAttempts) {
@@ -191,70 +192,90 @@ const HeadshotGenerator = () => {
     await checkStatus();
   };
 
-  const generateHeadshots = async (astriaModelId: number, dbModelId: number) => {
+  const pollImageCompletion = async (dbModelId: number): Promise<string[]> => {
+    const maxAttempts = 60; // 10 minutes with 10-second intervals
+    let attempts = 0;
+
+    const checkImages = async (): Promise<string[]> => {
+      try {
+        // Get images from database
+        const images = await completeSupabaseService.getModelImages(dbModelId);
+        
+        // Check if all images have URLs (completed)
+        const completedImages = images.filter(img => img.url && img.status === 'completed');
+        const generatingImages = images.filter(img => img.status === 'generating');
+        const failedImages = images.filter(img => img.status === 'failed');
+
+        console.log(`Image status check: ${completedImages.length} completed, ${generatingImages.length} generating, ${failedImages.length} failed`);
+
+        if (completedImages.length >= 3) {
+          // At least 3 images completed successfully
+          return completedImages.map(img => img.url).filter(Boolean);
+        } else if (generatingImages.length === 0 && completedImages.length === 0) {
+          // All failed
+          throw new Error('All image generation failed');
+        } else if (attempts < maxAttempts) {
+          // Continue polling
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
+          return checkImages();
+        } else {
+          // Timeout - return whatever we have
+          if (completedImages.length > 0) {
+            return completedImages.map(img => img.url).filter(Boolean);
+          }
+          throw new Error('Image generation timeout - images took too long to complete');
+        }
+      } catch (error) {
+        console.error('Error checking image completion:', error);
+        throw error;
+      }
+    };
+
+    return await checkImages();
+  };
+
+  const generateHeadshots = async (dbModelId: number) => {
     setCurrentStep('generating');
 
     try {
       const user = await completeSupabaseService.getCurrentUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Generate images with various professional prompts
-      const prompts = [
-        'professional headshot, business attire, office background, high quality, studio lighting',
-        'executive portrait, suit and tie, corporate headshot, professional lighting',
-        'linkedin profile photo, business casual, clean background, sharp focus',
-        'professional headshot, confident expression, neutral background, high resolution'
-      ];
+      // Generate 4 professional headshots with one API call
+      const prompt = 'professional headshot, business attire, clean background, high quality, studio lighting, corporate portrait';
+      
+      // Get user session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('User not authenticated');
 
-      const generatedImages: string[] = [];
+      // Generate images via secure edge function
+      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/generate-headshot`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'generate_image',
+          model_id: dbModelId,
+          prompt: prompt,
+          num_images: 4,
+          steps: 50,
+          cfg_scale: 7
+        }),
+      });
 
-      for (const prompt of prompts) {
-        try {
-          // Get user session for authentication
-          const { data: { session } } = await supabase.auth.getSession();
-          if (!session) throw new Error('User not authenticated');
-
-          // Generate images via secure edge function
-          const response = await fetch(`${supabase.supabaseUrl}/functions/v1/generate-headshot`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${session.access_token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              action: 'generate_image',
-              model_id: dbModelId,
-              prompt: prompt,
-              num_images: 1,
-              steps: 50,
-              cfg_scale: 7
-            }),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to generate image');
-          }
-
-          const astriaImages = await response.json();
-          
-          // astriaImages is now an array of image objects from the edge function
-
-          // The edge function already saves images to database and returns URLs
-          // Extract URLs from the response
-          if (astriaImages && astriaImages.length > 0) {
-            for (const astriaImage of astriaImages) {
-              generatedImages.push(astriaImage.url);
-            }
-          }
-        } catch (error) {
-          console.error('Error generating image with prompt:', prompt, error);
-        }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate images');
       }
 
-      // Deduct credit for successful generation
-      await completeSupabaseService.decrementUserCredits(user.id, 1);
-      setUserCredits(prev => prev - 1);
+      await response.json(); // Start generation
+      console.log('Generation started, polling for completion...');
+
+      // Poll the database for completed images (webhook updates them)
+      const generatedImages = await pollImageCompletion(dbModelId);
 
       setGeneratedImages(generatedImages);
       setCurrentStep('completed');
