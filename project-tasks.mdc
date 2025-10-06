@@ -7,8 +7,8 @@
 - [x] FR.AUTH.020: Password visibility toggle (Existing)
 - [x] FR.AUTH.030: User sign-up page (Existing) ✅ **FIXED: Added emailRedirectTo**
 - [x] FR.AUTH.040: Password verification (type twice) (Existing)
-- [x] FR.AUTH.050: First two users get 'Admin' role automatically
-- [x] FR.AUTH.060: All users designated as 'PRu' in appsource column
+- [x] FR.AUTH.050: First two users get 'Admin' role automatically ✅ **MIGRATION COMPLETED**
+- [x] FR.AUTH.060: All users designated as 'PRu' in appsource column ✅ **MIGRATION COMPLETED**
 
 ### 🔄 Phase 2: User Profile & Management (FR.USER) - IN PROGRESS
 - [x] FR.USER.010: Individual user profile pages (Existing)
@@ -18,7 +18,7 @@
 - [ ] FR.USER.050: Admin can approve pending user accounts ⚠️ TO IMPLEMENT
 - [ ] FR.USER.060: Admin can manage roles (promote/delete/ban) ⚠️ TO IMPLEMENT
 - [ ] FR.USER.070: Admin can change user roles ⚠️ TO IMPLEMENT
-- [x] FR.USER.080: 'PRu' added to appsource column (Completed via migration)
+- [x] FR.USER.080: 'PRu' added to appsource column ✅ **MIGRATION COMPLETED**
 - [ ] FR.USER.090: Admin can update user information ⚠️ TO IMPLEMENT
 - [ ] FR.USER.100: Creator associated with multiple users ⚠️ TO IMPLEMENT
 - [ ] FR.USER.110: Super Admin/Admin ban/unban users & creators ⚠️ TO IMPLEMENT
@@ -42,10 +42,12 @@
 - [ ] Admin oversight of all messages ⚠️ TO IMPLEMENT
 - [ ] Creator-user communication channels
 
-### 💰 Phase 6: Financials & Commission System - PARTIALLY EXISTS
+### 💰 Phase 6: Financials & Commission System - PARTIALLY COMPLETED
 - [x] Stripe integration (Existing)
 - [x] Commission tracking (Existing - creator_balances)
-- [ ] Super Admin commission percentage control ⚠️ TO IMPLEMENT
+- [x] Commission settings table created ✅ **MIGRATION COMPLETED**
+- [x] Default user commission rate (10%) set ✅ **MIGRATION COMPLETED**
+- [ ] Super Admin commission percentage control UI ⚠️ TO IMPLEMENT
 - [ ] Club member commission system (default 10%) ⚠️ TO IMPLEMENT
 - [ ] Revenue reporting for creators ⚠️ TO IMPLEMENT
 - [ ] Revenue reporting for club members ⚠️ TO IMPLEMENT
@@ -55,11 +57,15 @@
 - [ ] Admin capability to add languages
 
 ### 🚨 Critical Issues to Address
-1. **SECURITY**: Roles stored in user_roles table ✅ (Migration completed)
-2. **SECURITY**: RLS policies implemented with security definer functions ✅
-3. **Database**: appsource column added to profiles ✅
-4. **Frontend**: Admin Panel needs role management UI ⚠️ IN PROGRESS
-5. **Backend**: Service layer needs role management functions ⚠️ IN PROGRESS
+1. **SECURITY**: Roles stored in user_roles table ✅ **MIGRATION COMPLETED**
+2. **SECURITY**: RLS policies implemented with security definer functions ✅ **MIGRATION COMPLETED**
+3. **Database**: appsource column added to profiles ✅ **MIGRATION COMPLETED**
+4. **Database**: Commission settings table created ✅ **MIGRATION COMPLETED**
+5. **Database**: Headshot generator tables created (models, images, credits, samples) ✅ **MIGRATION COMPLETED**
+6. **Database**: User initialization trigger updated ✅ **MIGRATION COMPLETED**
+7. **Database**: All existing users migrated with roles and credits ✅ **MIGRATION COMPLETED**
+8. **Frontend**: Admin Panel needs role management UI ⚠️ **IN PROGRESS**
+9. **Backend**: Service layer needs to enable database methods ⚠️ **IN PROGRESS**
 
 ---
 
@@ -242,33 +248,65 @@ const { data, error } = await supabase.auth.signUp({
 
 ---
 
-## Current Status: ✅ User Roles System Migration Completed
+## Current Status: ✅ Complete Database Migration with Headshot Generator Tables
 
-### Latest Update: User Roles & RBAC Migration (2025-10-04)
+### Latest Update: Complete MYPHOTO Migration (2025-10-06)
 **Status:** ✅ MIGRATION COMPLETED
-**User Request:** Implement role-based access control with Super Admin, Admin, Creator, User roles
+**User Request:** Run comprehensive migration for user roles, commission settings, and headshot generator
 
-#### Migration Completed:
-1. ✅ Verified app_role enum has all required roles (super_admin, admin, creator, user)
-2. ✅ Updated handle_new_user() trigger function:
+#### Migration Completed Successfully:
+1. ✅ **User Roles System**:
+   - Verified app_role enum (super_admin, admin, creator, user)
+   - user_roles table with RLS policies
+   - Security definer functions: has_role(), is_admin_role(), is_super_admin(), is_creator()
    - First TWO users automatically get 'admin' role (FR.AUTH.050)
    - All subsequent users get 'user' role by default
    - All users get 'PRu' in appsource column (FR.AUTH.060)
-3. ✅ Created on_auth_user_created trigger on auth.users table
-4. ✅ Created is_super_admin() helper function for role checking
-5. ✅ Created is_creator() helper function for role checking
-6. ✅ Updated RLS policies on profiles table:
-   - "Admins can view all profiles" policy
-   - "Admins can update all profiles" policy
-7. ✅ Ensured appsource column exists with default 'PRu'
-8. ✅ Updated existing profiles to have appsource = 'PRu'
+
+2. ✅ **Commission Settings**:
+   - commission_settings table created
+   - Default user commission rate set to 10%
+   - RLS policies for super_admin control
+   - Support for creator-specific and club-specific rates
+
+3. ✅ **Headshot Generator Tables**:
+   - models table (BIGSERIAL id, astria_model_id INTEGER)
+   - images table (BIGSERIAL id, astria_image_id INTEGER)
+   - credits table (UUID id, default 5 credits per user)
+   - samples table (UUID id, file metadata)
+   - All tables have proper RLS policies
+
+4. ✅ **Enhanced User Initialization**:
+   - handle_new_user() trigger function updated
+   - on_auth_user_created trigger recreated
+   - Automatic role assignment
+   - Automatic credit initialization (5 credits)
+   - appsource set to 'PRu' for all new users
+
+5. ✅ **Data Migration**:
+   - All existing users migrated to user_roles table with 'user' role
+   - All existing users initialized with 5 free credits
+   - All existing profiles updated with appsource = 'PRu'
+
+6. ✅ **Security Measures**:
+   - All new functions have SET search_path = public
+   - Proper RLS policies on all tables
+   - Security definer functions to prevent RLS recursion
+
+#### Security Linter Notes:
+- Pre-existing functions may need search_path updates (not related to this migration)
+- New functions created in this migration already have proper security measures
+- Leaked password protection should be enabled in Supabase Auth settings
+- Postgres version upgrade recommended (handled by Supabase)
 
 #### Next Steps:
+- [ ] Update frontend code to use new database tables
+- [ ] Enable supabase-complete.ts database methods
 - [ ] Implement AdminDashboard role management UI
-- [ ] Create role assignment/change functionality
-- [ ] Implement user ban/unban system
-- [ ] Add user approval workflow
-- [ ] Enhance user listing with role filters
+- [ ] Create commission management interface for Super Admins
+- [ ] Implement headshot generation workflow
+- [ ] Add user ban/unban system
+- [ ] Create user approval workflow
 
 ---
 
@@ -367,44 +405,52 @@ const { data, error } = await supabase.auth.signUp({
 19. ✅ Created CINEMATIC_LANDING_CHECKLIST.md with design requirements
 20. ✅ Added Cinzel and Inter Google Fonts to index.html
 21. ✅ Updated tailwind.config.ts with cinematic fonts and animations
-19. ✅ Created cinematic Landing page (Index.tsx) with:
+22. ✅ Created cinematic Landing page (Index.tsx) with:
     - Hero section with gradient backgrounds
     - Animated elements (fade-in, shimmer, glow effects)
     - Features showcase section
     - Call-to-action section
     - Sticky header with branding
     - Smooth scroll animations
-20. ✅ Created cinematic Home page (Home.tsx) with:
+23. ✅ Created cinematic Home page (Home.tsx) with:
     - User welcome section with avatar
     - Credits display
     - Quick action cards
     - Account settings
     - Admin dashboard link for admins
     - Protected route logic
-21. ✅ Updated App.tsx routing to include /home route
-22. ✅ Updated authentication flow (/ → /home after login)
-23. ✅ Applied cinematic design system:
+24. ✅ Updated App.tsx routing to include /home route
+25. ✅ Updated authentication flow (/ → /home after login)
+26. ✅ Applied cinematic design system:
     - Elegant Cinzel font for headings
     - Gradient text effects
     - Glow and shimmer animations
     - Premium color palette
     - Smooth transitions throughout
-24. ✅ **FIXED Landing Page "/" Issue**:
+27. ✅ **FIXED Landing Page "/" Issue**:
     - Removed hero background image import that was causing build issues
     - Simplified to gradient-only background (still looks cinematic)
     - Verified page loads and works correctly
     - All elements render properly (screenshot verified)
+28. ✅ **COMPLETED Complete MYPHOTO Database Migration (2025-10-06)**:
+    - Created commission_settings table with 10% default rate
+    - Created headshot generator tables (models, images, credits, samples)
+    - All tables have proper RLS policies
+    - Enhanced handle_new_user() trigger with credit initialization
+    - Migrated all existing users with roles and credits
+    - All security definer functions properly configured
+    - All new users automatically get 'PRu' in appsource
+    - First two users automatically get 'admin' role
 
 ### 🔴 Critical Issues - **ACTION REQUIRED**
-1. **Missing package-lock.json** - User must create this file by running `npm install` locally
-2. **Headshot database tables not created** - User MUST run the SQL migration in Supabase SQL Editor:
-   - See HEADSHOT_MIGRATION_CHECKLIST.md for complete SQL
-   - Run at: https://supabase.com/dashboard/project/imzlzufdujhcbebibgpj/sql/new
-   - After running, code will need to be updated to enable database methods
+1. ✅ **Database migration completed** - All tables, triggers, and policies created successfully
+2. **Missing package-lock.json** - User must create this file by running `npm install` locally
 
 ### ⚠️ Known Issues (Non-Blocking)
 1. Some cached Next.js component errors may appear - these can be ignored as Next.js is not used
-2. Headshot features will show error messages until database migration is run
+2. Pre-existing database functions may need search_path updates (not related to recent migration)
+3. Leaked password protection should be enabled in Supabase Auth settings
+4. Postgres version upgrade recommended (handled by Supabase)
 
 ## Cinematic Design Implementation
 

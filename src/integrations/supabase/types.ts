@@ -143,6 +143,30 @@ export type Database = {
         }
         Relationships: []
       }
+      credits: {
+        Row: {
+          created_at: string | null
+          credits: number
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          credits?: number
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          credits?: number
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       event_attendees: {
         Row: {
           created_at: string | null
@@ -339,6 +363,47 @@ export type Database = {
         }
         Relationships: []
       }
+      images: {
+        Row: {
+          astria_image_id: number | null
+          created_at: string | null
+          id: number
+          model_id: number
+          prompt: string | null
+          status: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          astria_image_id?: number | null
+          created_at?: string | null
+          id?: number
+          model_id: number
+          prompt?: string | null
+          status?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          astria_image_id?: number | null
+          created_at?: string | null
+          id?: number
+          model_id?: number
+          prompt?: string | null
+          status?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "images_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
@@ -363,6 +428,36 @@ export type Database = {
           read?: boolean
           recipient_id?: string
           sender_id?: string
+        }
+        Relationships: []
+      }
+      models: {
+        Row: {
+          astria_model_id: number
+          created_at: string | null
+          id: number
+          name: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          astria_model_id: number
+          created_at?: string | null
+          id?: number
+          name: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          astria_model_id?: number
+          created_at?: string | null
+          id?: number
+          name?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -646,6 +741,44 @@ export type Database = {
           video_upload_limit_override?: number | null
         }
         Relationships: []
+      }
+      samples: {
+        Row: {
+          created_at: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          model_id: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          model_id?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          model_id?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "samples_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stories: {
         Row: {
@@ -1095,6 +1228,14 @@ export type Database = {
       }
       is_admin_role: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_creator: {
+        Args: { _user_id?: string }
+        Returns: boolean
+      }
+      is_super_admin: {
+        Args: { _user_id?: string }
         Returns: boolean
       }
       mark_messages_as_read: {
