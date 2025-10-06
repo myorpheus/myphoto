@@ -61,56 +61,182 @@ const TrainModel = () => {
     try {
       setIsLoadingAstriaModels(true);
       
-      const { data: { session } } = await supabase.auth.getSession();
+      console.log('🔄 Starting Astria models loading process...');
+      
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('❌ Session error:', sessionError);
+        throw new Error(`Session error: ${sessionError.message}`);
+      }
+      
       if (!session) {
-        console.log('No session available for loading Astria models');
+        console.warn('⚠️ No session available for loading Astria models');
+        toast({
+          title: 'Authentication Required',
+          description: 'Please log in to load existing models.',
+          variant: 'destructive',
+        });
         return;
       }
 
-      console.log('🔄 Loading existing Astria models...');
+      console.log('✅ Session valid, user ID:', session.user?.id);
+      console.log('🔍 Session expires at:', new Date(session.expires_at * 1000));
+      console.log('🔄 Calling edge function for model list...');
       
-      const response = await fetch(`https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/generate-headshot`, {
+      const apiUrl = `${supabase.supabaseUrl}/functions/v1/generate-headshot`;
+      console.log('🌐 API URL:', apiUrl);
+      
+      const requestPayload = { action: 'list_models' };
+      console.log('📤 Request payload:', requestPayload);
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          action: 'list_models'
-        }),
+        body: JSON.stringify(requestPayload),
       });
 
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to load Astria models');
+        let errorData;
+        const contentType = response.headers.get('content-type');
+        
+        try {
+          if (contentType && contentType.includes('application/json')) {
+            errorData = await response.json();
+          } else {
+            const textResponse = await response.text();
+            console.error('❌ Non-JSON error response:', textResponse);
+            errorData = { error: textResponse, rawResponse: textResponse };
+          }
+        } catch (parseError) {
+          console.error('❌ Error parsing response:', parseError);
+          errorData = { error: 'Failed to parse error response', parseError: parseError.message };
+        }
+        
+        console.error('❌ Detailed API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+          url: apiUrl
+        });
+        
+        const errorMessage = `API Error ${response.status}: ${errorData?.error || response.statusText}${
+          errorData?.apiKeyConfigured === false ? ' (API Key not configured)' : ''
+        }${errorData?.details ? ` - ${errorData.details}` : ''}`;
+        
+        throw new Error(errorMessage);
       }
 
-      const result = await response.json();
-      console.log('✅ Loaded Astria models:', result);
-      
-      if (result.models && Array.isArray(result.models)) {
-        setAstriaModels(result.models);
-        
-        // Find and set newheadhotMAN as default if it exists
-        const defaultModel = result.models.find((model: any) => 
-          model.name && model.name.toLowerCase().includes('newheadhotman')
-        );
-        
-        if (defaultModel) {
-          console.log('🎯 Found default model newheadhotMAN:', defaultModel);
-          setSelectedExistingModel(defaultModel);
-          setUseExistingModel(true);
-        }
+      let result;
+      try {
+        result = await response.json();
+        console.log('✅ Raw API response:', result);
+      } catch (parseError) {
+        console.error('❌ Failed to parse successful response:', parseError);
+        throw new Error('Invalid response format from API');
       }
+      
+      if (!result.success) {
+        console.error('❌ API returned failure:', result);
+        throw new Error(result.error || 'API returned unsuccessful response');
+      }
+      
+      if (!result.models) {
+        console.warn('⚠️ No models property in response:', result);
+        setAstriaModels([]);
+        return;
+      }
+      
+      if (!Array.isArray(result.models)) {
+        console.warn('⚠️ Models is not an array:', typeof result.models, result.models);
+        setAstriaModels([]);
+        return;
+      }
+      
+      console.log('📊 Model count:', result.models.length);
+      console.log('📋 Model details:', result.models.map((m, i) => ({
+        index: i,
+        id: m.id,
+        name: m.name || m.title,
+        status: m.status,
+        created_at: m.created_at
+      })));
+      
+      setAstriaModels(result.models);
+      
+      // Enhanced model search with multiple fallback strategies
+      console.log('🔍 Searching for default model...');
+      
+      // Strategy 1: Look for specific name patterns
+      let defaultModel = result.models.find((model: any) => {
+        const name = (model.name || model.title || '').toLowerCase();
+        const matches = name.includes('newheadhotman') || name.includes('newheadshot');
+        if (matches) {
+          console.log('🎯 Found model by name pattern:', model);
+        }
+        return matches;
+      });
+      
+      // Strategy 2: Look for any headshot-related models if specific not found
+      if (!defaultModel) {
+        defaultModel = result.models.find((model: any) => {
+          const name = (model.name || model.title || '').toLowerCase();
+          const matches = name.includes('headshot') || name.includes('head');
+          if (matches) {
+            console.log('🎯 Found model by headshot pattern:', model);
+          }
+          return matches;
+        });
+      }
+      
+      // Strategy 3: Use first trained model as fallback (handle undefined status)
+      if (!defaultModel) {
+        defaultModel = result.models.find((model: any) => {
+          const isTrained = model.status === 'trained' || model.status === 'finished' || !model.status; // undefined status is OK
+          if (isTrained) {
+            console.log('🎯 Found trained/available model as fallback:', model);
+          }
+          return isTrained;
+        });
+      }
+      
+      // Strategy 4: Use any available model
+      if (!defaultModel && result.models.length > 0) {
+        defaultModel = result.models[0];
+        console.log('🎯 Using first available model:', defaultModel);
+      }
+      
+      if (defaultModel) {
+        console.log('✅ Selected default model:', {
+          id: defaultModel.id,
+          name: defaultModel.name || defaultModel.title,
+          status: defaultModel.status
+        });
+        setSelectedExistingModel(defaultModel);
+        setUseExistingModel(true);
+      } else {
+        console.log('⚠️ No suitable default model found');
+      }
+      
     } catch (error) {
-      console.error('❌ Error loading Astria models:', error);
+      console.error('❌ Complete error loading Astria models:', error);
+      console.error('❌ Error stack:', error.stack);
+      
+      // Show user-friendly error message
+      const errorMessage = error.message || 'Unknown error occurred';
       toast({
-        title: 'Info',
-        description: 'Could not load existing Astria models. You can still create new models.',
-        variant: 'default',
+        title: 'Failed to Load Models',
+        description: `Could not load existing Astria models: ${errorMessage}. You can still create new models.`,
+        variant: 'destructive',
       });
     } finally {
       setIsLoadingAstriaModels(false);
+      console.log('🏁 Finished loading Astria models');
     }
   };
 
@@ -178,10 +304,16 @@ const TrainModel = () => {
         return;
       }
 
-      if (selectedExistingModel.status !== 'trained') {
+      // Handle undefined status from Astria API - treat as available
+      // Allow models with undefined status (common in Astria API) or trained/finished status
+      const isModelReady = !selectedExistingModel.status || 
+                          selectedExistingModel.status === 'trained' || 
+                          selectedExistingModel.status === 'finished';
+                          
+      if (!isModelReady) {
         toast({
           title: 'Model Not Ready',
-          description: 'Selected model is not trained yet. Please select a trained model.',
+          description: `Selected model status is "${selectedExistingModel.status}". Please select a trained model.`,
           variant: 'destructive',
         });
         return;
@@ -233,7 +365,7 @@ const TrainModel = () => {
         const imageBase64 = await filesToBase64(selectedFiles);
 
         // Start Astria model training via secure edge function
-        const response = await fetch(`https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/generate-headshot`, {
+        const response = await fetch(`${supabase.supabaseUrl}/functions/v1/generate-headshot`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
@@ -496,7 +628,7 @@ const TrainModel = () => {
                   disabled={
                     isTraining || 
                     (useExistingModel 
-                      ? !selectedExistingModel || selectedExistingModel.status !== 'trained'
+                      ? !selectedExistingModel || (selectedExistingModel.status && selectedExistingModel.status !== 'trained' && selectedExistingModel.status !== 'finished')
                       : !modelName.trim() || selectedFiles.length < 4
                     )
                   }

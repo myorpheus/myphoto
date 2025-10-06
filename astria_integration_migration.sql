@@ -308,15 +308,32 @@ CREATE POLICY "Service role has full access to samples" ON public.samples
     WITH CHECK (true);
 
 -- Ensure service role policies exist for all tables
-CREATE POLICY IF NOT EXISTS "Service role full models access" ON public.models
-    FOR ALL TO service_role
-    USING (true)
-    WITH CHECK (true);
+DO $$
+BEGIN
+    -- Check if service role policy for models exists
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' AND tablename = 'models' AND policyname = 'Service role full models access'
+    ) THEN
+        CREATE POLICY "Service role full models access" ON public.models
+            FOR ALL TO service_role
+            USING (true)
+            WITH CHECK (true);
+        RAISE NOTICE 'Created service role policy for models table';
+    END IF;
 
-CREATE POLICY IF NOT EXISTS "Service role full credits access" ON public.credits
-    FOR ALL TO service_role
-    USING (true)
-    WITH CHECK (true);
+    -- Check if service role policy for credits exists
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' AND tablename = 'credits' AND policyname = 'Service role full credits access'
+    ) THEN
+        CREATE POLICY "Service role full credits access" ON public.credits
+            FOR ALL TO service_role
+            USING (true)
+            WITH CHECK (true);
+        RAISE NOTICE 'Created service role policy for credits table';
+    END IF;
+END $$;
 
 -- ===========================================
 -- PART 5: ADMIN USER MANAGEMENT SUPPORT

@@ -279,25 +279,157 @@ serve(async (req) => {
       }
 
       case "list_models": {
-        // Call Astria API to list all tunes (models) for the account
-        const response = await fetch("https://api.astria.ai/tunes", {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${ASTRIA_API_KEY}`,
-          },
+        // Enhanced logging for debugging
+        console.log("🔍 === LIST_MODELS DEBUG START ===");
+        console.log("🔍 User ID:", user.id);
+        console.log("🔍 ASTRIA_API_KEY exists:", !!ASTRIA_API_KEY);
+        console.log("🔍 ASTRIA_API_KEY length:", ASTRIA_API_KEY ? ASTRIA_API_KEY.length : 0);
+        console.log("🔍 ASTRIA_API_KEY first 10 chars:", ASTRIA_API_KEY ? ASTRIA_API_KEY.substring(0, 10) + "..." : "null");
+        
+        // Validate API key format
+        if (ASTRIA_API_KEY && !ASTRIA_API_KEY.startsWith('sd_')) {
+          console.warn("⚠️ ASTRIA_API_KEY does not start with 'sd_' - may be invalid format");
+        }
+        
+        const apiUrl = "https://api.astria.ai/tunes";
+        console.log("🔍 API URL:", apiUrl);
+        
+        const headers = {
+          "Authorization": `Bearer ${ASTRIA_API_KEY}`,
+          "Content-Type": "application/json",
+          "User-Agent": "Supabase-Edge-Function/1.0"
+        };
+        console.log("🔍 Request headers (auth masked):", {
+          ...headers,
+          "Authorization": `Bearer ${ASTRIA_API_KEY ? ASTRIA_API_KEY.substring(0, 10) + "..." : "null"}`
         });
+        
+        let response;
+        try {
+          console.log("🔍 Making API request to Astria...");
+          response = await fetch(apiUrl, {
+            method: "GET",
+            headers,
+          });
+          console.log("🔍 API request completed");
+        } catch (fetchError) {
+          console.error("❌ Network error calling Astria API:", fetchError);
+          return new Response(
+            JSON.stringify({ 
+              error: "Network error connecting to Astria API", 
+              details: fetchError.message,
+              apiKeyConfigured: !!ASTRIA_API_KEY
+            }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        console.log("🔍 Astria API response status:", response.status);
+        console.log("🔍 Astria API response status text:", response.statusText);
+        console.log("🔍 Astria API response headers:", Object.fromEntries(response.headers.entries()));
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error("❌ Astria API error:", response.status, errorText);
+          let errorText;
+          let errorData;
+          
+          try {
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              errorData = await response.json();
+              errorText = JSON.stringify(errorData);
+              console.error("❌ Astria API JSON error:", errorData);
+            } else {
+              errorText = await response.text();
+              console.error("❌ Astria API text error:", errorText);
+            }
+          } catch (parseError) {
+            console.error("❌ Error parsing Astria API error response:", parseError);
+            errorText = `Failed to parse error response: ${parseError.message}`;
+          }
+          
+          console.error("❌ Complete Astria API error details:", {
+            status: response.status,
+            statusText: response.statusText,
+            errorText,
+            errorData,
+            url: apiUrl,
+            apiKeyConfigured: !!ASTRIA_API_KEY,
+            apiKeyFormat: ASTRIA_API_KEY ? ASTRIA_API_KEY.substring(0, 3) + "..." : "null"
+          });
+          
+          // Provide specific error messages based on status codes
+          let userFriendlyError = "Failed to fetch models";
+          if (response.status === 401) {
+            userFriendlyError = "Authentication failed - API key may be invalid";
+          } else if (response.status === 403) {
+            userFriendlyError = "Access forbidden - API key may lack permissions";
+          } else if (response.status === 429) {
+            userFriendlyError = "Rate limit exceeded - please try again later";
+          } else if (response.status >= 500) {
+            userFriendlyError = "Astria API server error - please try again";
+          }
+          
           return new Response(
-            JSON.stringify({ error: "Failed to fetch models", details: errorText }),
+            JSON.stringify({ 
+              error: userFriendlyError,
+              details: errorText,
+              status: response.status,
+              apiKeyConfigured: !!ASTRIA_API_KEY,
+              timestamp: new Date().toISOString()
+            }),
             { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
 
-        const models = await response.json();
+        let models;
+        try {
+          console.log("🔍 Parsing successful response...");
+          models = await response.json();
+          console.log("✅ Response parsed successfully");
+        } catch (parseError) {
+          console.error("❌ Failed to parse successful response:", parseError);
+          return new Response(
+            JSON.stringify({ 
+              error: "Invalid response format from Astria API", 
+              details: parseError.message,
+              apiKeyConfigured: !!ASTRIA_API_KEY
+            }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        
         console.log("✅ Fetched Astria models:", models);
+        console.log("🔍 Models type:", typeof models);
+        console.log("🔍 Is array?:", Array.isArray(models));
+        console.log("🔍 Number of models:", Array.isArray(models) ? models.length : "not an array");
+        
+        if (Array.isArray(models)) {
+          console.log("🔍 Model details:", models.map((m, i) => ({
+            index: i,
+            id: m.id,
+            name: m.name || m.title,
+            status: m.status,
+            created_at: m.created_at,
+            updated_at: m.updated_at
+          })));
+          
+          // Look for the specific model
+          const targetModel = models.find(m => 
+            (m.name && m.name.toLowerCase().includes('newheadhotman')) ||
+            (m.title && m.title.toLowerCase().includes('newheadhotman'))
+          );
+          
+          if (targetModel) {
+            console.log("🎯 Found target 'newheadhotman' model:", targetModel);
+          } else {
+            console.log("⚠️ Target 'newheadhotman' model not found");
+            console.log("🔍 Available model names:", models.map(m => m.name || m.title));
+          }
+        } else {
+          console.warn("⚠️ Response is not an array, unexpected format:", models);
+        }
+        
+        console.log("🔍 === LIST_MODELS DEBUG END ===");
         
         return new Response(
           JSON.stringify({ success: true, models: models }),
