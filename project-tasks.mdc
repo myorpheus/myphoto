@@ -217,7 +217,83 @@ To complete the fix, user must:
 
 ---
 
-## 🔧 Latest Fix: Complete Admin User Management & Navigation Fix (2025-10-06)
+## 🔧 Latest Fix: TrainModel Text Visibility Issue (2025-10-06)
+
+### **Issue: Text Invisible in TrainModel Input Field - RESOLVED**
+**Status:** ✅ **FIXED**
+**Priority:** HIGH - UX CRITICAL
+**User Report:** "On page https://myphoto.heyphotoai.com/admin/train, make the text black in the textbox because I can't see what I type."
+
+#### **Gemini CLI Analysis Results:**
+**Root Cause:** The TrainModel.tsx page was using a standard HTML `<input>` element instead of the properly styled `Input` component from the UI library, causing text to be invisible due to theme/color conflicts.
+
+#### **COMPLETE SOLUTION IMPLEMENTED:**
+
+##### 🔧 **UI Component Fix Applied:**
+**File:** `src/pages/TrainModel.tsx` (lines 8, 244-252)
+
+**Problem:** 
+- Standard HTML `<input>` element inherited wrong text color
+- Text appeared invisible against background (likely white text on white background)
+- Not following project's UI component standards
+
+**Solution:**
+1. **Added Import** for styled Input component:
+```typescript
+// Added to imports
+import { Input } from '@/components/ui/input';
+```
+
+2. **Replaced HTML Input** with styled Input component:
+```typescript
+// BEFORE (problematic standard HTML input)
+<input
+  id="modelName"
+  type="text"
+  value={modelName}
+  onChange={(e) => setModelName(e.target.value)}
+  placeholder="Enter model name (e.g., Professional Headshots v2)"
+  className="w-full px-3 py-2 border border-input rounded-md"
+  disabled={isTraining}
+/>
+
+// AFTER (properly styled component)
+<Input
+  id="modelName"
+  type="text"
+  value={modelName}
+  onChange={(e) => setModelName(e.target.value)}
+  placeholder="Enter model name (e.g., Professional Headshots v2)"
+  disabled={isTraining}
+/>
+```
+
+##### 🎨 **Technical Benefits:**
+- **Theme Compatibility**: Input component properly handles light/dark modes
+- **Consistent Styling**: Matches the design system used throughout the app
+- **Accessibility**: Better focus states and keyboard navigation
+- **Maintainability**: Uses centralized styling from UI library
+
+##### ⚡ **Immediate Results:**
+- ✅ **Text is now visible** when typing in the model name field
+- ✅ **Consistent appearance** with other input fields in the application
+- ✅ **Proper theme integration** for light/dark mode support
+- ✅ **Professional styling** matching the rest of the admin interface
+
+#### **Pattern Recognition:**
+This issue represents a common pattern where developers use standard HTML elements instead of the project's custom UI components, leading to styling inconsistencies. The solution is always to use the appropriate component from `@/components/ui/` instead of raw HTML elements.
+
+#### **Files Modified:**
+- `src/pages/TrainModel.tsx` - **FIXED** input component usage
+
+#### **Expected User Experience:**
+- Users can now clearly see the text they type in the "Model Name" field
+- Input field has consistent styling with the rest of the admin interface
+- Proper focus states and visual feedback when interacting with the field
+
+---
+
+## 🔧 Previous Fix: Complete Admin User Management & Navigation Fix (2025-10-06)
 
 ### **Issue: Admin User Management & Navigation Issues - FULLY RESOLVED**
 **Status:** ✅ **COMPLETELY IMPLEMENTED**

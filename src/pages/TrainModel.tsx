@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
 import { ArrowLeft, Upload, Zap, Clock, CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { completeSupabaseService } from '@/services/supabase-complete';
@@ -241,13 +242,12 @@ const TrainModel = () => {
                   <label htmlFor="modelName" className="text-sm font-medium">
                     Model Name
                   </label>
-                  <input
+                  <Input
                     id="modelName"
                     type="text"
                     value={modelName}
                     onChange={(e) => setModelName(e.target.value)}
                     placeholder="Enter model name (e.g., Professional Headshots v2)"
-                    className="w-full px-3 py-2 border border-input rounded-md"
                     disabled={isTraining}
                   />
                 </div>
