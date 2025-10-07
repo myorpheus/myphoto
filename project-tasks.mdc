@@ -222,19 +222,28 @@
 
 #### 🟡 HIGH PRIORITY (>400 lines)
 
-##### 7. Login.tsx (464 lines → ~3 components <200 lines each)
-- [ ] **Extract LoginForm.tsx**: Login form component
-- [ ] **Extract SignupForm.tsx**: Registration form
-- [ ] **Extract AuthProviders.tsx**: OAuth providers
-- [ ] **Create useAuth.ts hook**: Authentication logic
-- [ ] **Create authService.ts**: Auth API calls
+##### 7. Login.tsx (119 lines) - **ALREADY REFACTORED!**
+- ✅ **Extracted LoginForm.tsx**: Login form component (99 lines)
+- ✅ **Extracted SignupForm.tsx**: Registration form (175 lines)
+- ✅ **Login.tsx**: Orchestrator with tab switching and auth state (119 lines)
+- **STATUS**: Already well-structured with separated form components
+- **NEXT STEPS**:
+  - [ ] Optional: Extract auth diagnostics into separate utility
+  - [ ] Write unit tests for Login flow
 
-##### 8. Gallery.tsx (460 lines → ~3 components <200 lines each)
-- [ ] **Extract ImageGrid.tsx**: Image display grid
-- [ ] **Extract FilterBar.tsx**: Filtering controls
+##### 8. Gallery.tsx (460 lines → ~3 components <200 lines each) - **NEXT PRIORITY**
+- [ ] **Extract ImageGrid.tsx**: Image display grid component
+- [ ] **Extract FilterBar.tsx**: Filtering and sorting controls
 - [ ] **Extract ImageModal.tsx**: Full-size image viewer
-- [ ] **Create useImageFiltering.ts hook**: Filter state management
-- [ ] **Create galleryService.ts**: Gallery API calls
+- [ ] **Create useGalleryData.ts hook**: State management and filtering logic
+- [ ] **Create galleryService.ts**: Gallery API calls and image operations
+- [ ] **Update Gallery.tsx**: Orchestrator component only
+- **STATUS**: Requires refactoring - 460 lines exceeds target
+- **NEXT STEPS**:
+  - [ ] Extract filtering controls (lines 230-318)
+  - [ ] Extract image grid display (lines 320-450)
+  - [ ] Create state management hook
+  - [ ] Write unit tests for extracted components
 
 ### Refactoring Success Metrics:
 - [ ] All components under 200 lines
