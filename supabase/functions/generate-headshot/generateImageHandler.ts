@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { corsHeaders } from "./utils.ts";
+import { enhancePromptWithGemini, isGeminiAvailable } from "./geminiPromptEnhancer.ts";
 
 interface GenerateImageParams {
   model_id: string;
@@ -113,8 +114,26 @@ export async function generateImageHandler(
       finalNegativePrompt = negative_prompt;
     }
 
+    // 🤖 GEMINI 2.5 FLASH ENHANCEMENT
+    // Enhance prompt with Google Gemini if API key is available
+    if (isGeminiAvailable()) {
+      console.log("🤖 Gemini 2.5 Flash available - enhancing prompt...");
+      const geminiResult = await enhancePromptWithGemini(enhancedPrompt, style, gender);
+
+      if (geminiResult.wasEnhanced) {
+        console.log("✅ Gemini enhancement successful");
+        console.log("📝 Original:", geminiResult.originalPrompt);
+        console.log("🚀 Enhanced:", geminiResult.enhancedPrompt);
+        enhancedPrompt = geminiResult.enhancedPrompt;
+      } else {
+        console.log("⚠️ Gemini enhancement skipped:", geminiResult.error || "Unknown reason");
+      }
+    } else {
+      console.log("ℹ️ Gemini API not configured - using style-based prompts only");
+    }
+
     console.log("🍌 Using nano banana generation model");
-    console.log("🎨 Enhanced prompt:", enhancedPrompt);
+    console.log("🎨 Final prompt:", enhancedPrompt);
     console.log("🚫 Negative prompt:", finalNegativePrompt);
 
     // Call Astria API to generate images with nano banana model
