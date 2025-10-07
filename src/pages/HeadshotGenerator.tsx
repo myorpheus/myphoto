@@ -86,12 +86,35 @@ const HeadshotGenerator = () => {
 
       // Get user session for authentication
       console.log('🎫 Getting user session...');
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('❌ Session error:', sessionError);
+        throw new Error(`Authentication error: ${sessionError.message}`);
+      }
       if (!session) {
         console.error('❌ No session found');
-        throw new Error('User not authenticated');
+        toast({
+          title: 'Authentication Required',
+          description: 'Please log in again to generate headshots.',
+          variant: 'destructive',
+        });
+        navigate('/login');
+        return;
       }
       console.log('✅ Session obtained, token length:', session.access_token?.length || 0);
+      
+      // Validate session is not expired
+      const now = Math.floor(Date.now() / 1000);
+      if (session.expires_at && session.expires_at < now) {
+        console.error('❌ Session expired');
+        toast({
+          title: 'Session Expired',
+          description: 'Your session has expired. Please log in again.',
+          variant: 'destructive',
+        });
+        navigate('/login');
+        return;
+      }
 
       // Convert images to base64 for secure transmission
       console.log('🔄 Converting images to base64...');
@@ -129,6 +152,27 @@ const HeadshotGenerator = () => {
         } catch (e) {
           errorData = { error: errorText };
         }
+        
+        // Provide user-friendly error messages based on status codes
+        let userMessage = 'Failed to start training';
+        if (response.status === 401) {
+          userMessage = 'Authentication failed. Please log in again.';
+          navigate('/login');
+        } else if (response.status === 402) {
+          userMessage = 'Insufficient credits. Please purchase more credits.';
+        } else if (response.status === 500 && errorData.error?.includes('ASTRIA_API_KEY')) {
+          userMessage = 'Service configuration error. Please contact support.';
+        } else if (response.status === 400) {
+          userMessage = errorData.error || 'Invalid request parameters.';
+        } else {
+          userMessage = errorData.error || `Server error (${response.status}). Please try again.`;
+        }
+        
+        toast({
+          title: 'Training Failed',
+          description: userMessage,
+          variant: 'destructive',
+        });
         
         throw new Error(errorData.error || `HTTP ${response.status}: Failed to start training`);
       }
@@ -326,10 +370,14 @@ const HeadshotGenerator = () => {
       setCurrentStep('completed');
       setIsProcessing(false);
 
+      // Show success message with image count
       toast({
-        title: 'Success!',
-        description: `Generated ${generatedImages.length} professional headshots`,
+        title: '🎉 Headshots Generated!',
+        description: `Successfully generated ${generatedImages.length} professional headshots. They are now displayed below.`,
+        variant: 'default',
       });
+
+      console.log('✅ Headshots generation completed successfully:', generatedImages.length);
 
     } catch (error) {
       console.error('Error generating headshots:', error);
@@ -375,14 +423,30 @@ const HeadshotGenerator = () => {
   // Debug function to test edge function configuration
   const testConfiguration = async () => {
     console.log('🧪 Testing edge function configuration...');
+    console.log('🧪 Current URL:', window.location.href);
+    console.log('🧪 Supabase client configured');
     
     try {
+      console.log('🧪 Getting current user and session...');
+      const user = await completeSupabaseService.getCurrentUser();
       const { data: { session } } = await supabase.auth.getSession();
+      
+      console.log('🧪 User:', user?.id || 'No user');
+      console.log('🧪 Session exists:', !!session);
+      console.log('🧪 Token length:', session?.access_token?.length || 0);
+      
       if (!session) {
         console.error('❌ No session for config test');
+        toast({
+          title: 'Configuration Test Failed',
+          description: 'No user session found. Please login.',
+          variant: 'destructive',
+        });
         return;
       }
       
+      // Test 1: Check if edge function is accessible
+      console.log('🧪 Test 1: Basic edge function connectivity...');
       const response = await fetch(`https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/generate-headshot`, {
         method: 'POST',
         headers: {
@@ -395,12 +459,57 @@ const HeadshotGenerator = () => {
       });
 
       console.log('🧪 Config test response status:', response.status);
+      console.log('🧪 Config test response headers:', Object.fromEntries(response.headers.entries()));
+      
       const responseText = await response.text();
-      console.log('🧪 Config test response:', responseText);
+      console.log('🧪 Config test response body:', responseText);
+      
+      let configTestResult = 'Unknown';
+      let configDetails = '';
+      
+      if (response.status === 200) {
+        configTestResult = '✅ Edge function accessible';
+        try {
+          const data = JSON.parse(responseText);
+          configDetails = `Models found: ${data.models?.length || 0}`;
+        } catch (e) {
+          configDetails = 'Response parsed successfully';
+        }
+      } else if (response.status === 401) {
+        configTestResult = '❌ Authentication failed';
+        configDetails = 'JWT token invalid or expired';
+      } else if (response.status === 500) {
+        configTestResult = '❌ Server configuration error';
+        if (responseText.includes('ASTRIA_API_KEY')) {
+          configDetails = 'ASTRIA_API_KEY not configured in Supabase';
+        } else if (responseText.includes('Database configuration')) {
+          configDetails = 'Database configuration missing';
+        } else {
+          configDetails = 'Internal server error - check logs';
+        }
+      } else {
+        configTestResult = `❌ HTTP ${response.status}`;
+        configDetails = responseText.substring(0, 100);
+      }
+      
+      // Test 2: Check user credits
+      console.log('🧪 Test 2: Checking user credits...');
+      const credits = await completeSupabaseService.getUserCredits(user!.id);
+      console.log('🧪 User credits:', credits);
+      
+      // Test 3: Try a simple database operation
+      console.log('🧪 Test 3: Testing database connectivity...');
+      try {
+        const models = await completeSupabaseService.getUserModels(user!.id);
+        console.log('🧪 User models count:', models.length);
+      } catch (dbError) {
+        console.error('🧪 Database test failed:', dbError);
+      }
       
       toast({
-        title: 'Configuration Test',
-        description: `Edge function responded with status ${response.status}. Check console for details.`,
+        title: 'Configuration Test Complete',
+        description: `${configTestResult}. ${configDetails}. Check console for full details.`,
+        variant: response.status === 200 ? 'default' : 'destructive',
       });
       
     } catch (error) {
