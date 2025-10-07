@@ -35,9 +35,9 @@ const Overview = () => {
       const credits = await completeSupabaseService.getUserCredits(user.id);
       setUserCredits(credits);
 
-      // Load recent images
+      // Load all images (expanded from 6 to all)
       const images = await completeSupabaseService.getUserImages(user.id);
-      setRecentImages(images.slice(0, 6)); // Show last 6 images
+      setRecentImages(images); // Show all images
     } catch (error) {
       toast({
         title: 'Error',
@@ -140,12 +140,21 @@ const Overview = () => {
           </Card>
         </div>
 
-        {/* Recent Images */}
+        {/* All Images Gallery */}
         {recentImages.length > 0 && (
           <Card>
             <CardContent className="pt-6">
-              <h3 className="text-lg font-semibold mb-4">Recent Headshots</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Your Headshots ({recentImages.length})</h3>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/gallery')}
+                >
+                  View All in Gallery
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                 {recentImages.map((image, index) => (
                   <div key={image.id} className="relative group">
                     <img

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import { HeadshotGallery } from '@/components/HeadshotGallery';
 import { GenerationProgress } from '@/components/GenerationProgress';
@@ -10,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { completeSupabaseService } from '@/services/supabase-complete';
 import { supabase } from '@/integrations/supabase/client';
 import { filesToBase64 } from '@/utils/file-utils';
-import { ArrowLeft, Crown, Coins } from 'lucide-react';
+import { ArrowLeft, Crown, Coins, Gallery } from 'lucide-react';
 
 type GenerationStep = 'upload' | 'training' | 'generating' | 'completed';
 
@@ -21,6 +23,8 @@ const HeadshotGenerator = () => {
   const [currentModel, setCurrentModel] = useState<any>(null);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedStyle, setSelectedStyle] = useState<string>('professional');
+  const [selectedGender, setSelectedGender] = useState<string>('man');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -260,6 +264,8 @@ const HeadshotGenerator = () => {
           action: 'generate_image',
           model_id: dbModelId,
           prompt: prompt,
+          style: selectedStyle,
+          gender: selectedGender,
           num_images: 4,
           steps: 50,
           cfg_scale: 7
@@ -379,6 +385,15 @@ const HeadshotGenerator = () => {
           </div>
           
           <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/gallery')}
+              disabled={isProcessing}
+            >
+              <Gallery className="w-4 h-4 mr-2" />
+              Gallery
+            </Button>
+            
             <Card className="px-4 py-2">
               <div className="flex items-center gap-2">
                 <Coins className="w-4 h-4 text-yellow-500" />
@@ -407,7 +422,69 @@ const HeadshotGenerator = () => {
                   Our AI will generate professional headshots perfect for LinkedIn, resumes, and business profiles.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
+                {/* Photo Style Selection */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Choose Your Photo Style</h3>
+                  <RadioGroup 
+                    value={selectedStyle} 
+                    onValueChange={setSelectedStyle}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                  >
+                    <div className="flex items-center space-x-2 p-4 border rounded-lg cursor-pointer hover:bg-accent">
+                      <RadioGroupItem value="professional" id="professional" />
+                      <Label htmlFor="professional" className="cursor-pointer flex-1">
+                        <div>
+                          <div className="font-medium">Professional/Corporate</div>
+                          <div className="text-sm text-muted-foreground">Full face frontal headshot, perfect for LinkedIn and business</div>
+                        </div>
+                      </Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 p-4 border rounded-lg cursor-pointer hover:bg-accent">
+                      <RadioGroupItem value="doctor" id="doctor" />
+                      <Label htmlFor="doctor" className="cursor-pointer flex-1">
+                        <div>
+                          <div className="font-medium">Doctor/Medical</div>
+                          <div className="text-sm text-muted-foreground">Professional medical headshot, ideal for healthcare professionals</div>
+                        </div>
+                      </Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 p-4 border rounded-lg cursor-pointer hover:bg-accent">
+                      <RadioGroupItem value="boudoir" id="boudoir" />
+                      <Label htmlFor="boudoir" className="cursor-pointer flex-1">
+                        <div>
+                          <div className="font-medium">Boudoir/Artistic</div>
+                          <div className="text-sm text-muted-foreground">Mid-body artistic shot with tasteful styling</div>
+                        </div>
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                  
+                  {/* Gender Selection for Boudoir */}
+                  {selectedStyle === 'boudoir' && (
+                    <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                      <h4 className="font-medium mb-2">Select Gender for Styling</h4>
+                      <RadioGroup 
+                        value={selectedGender} 
+                        onValueChange={setSelectedGender}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="man" id="man" />
+                          <Label htmlFor="man">Man (shirtless styling)</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="woman" id="woman" />
+                          <Label htmlFor="woman">Woman (elegant lingerie)</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                  )}
+                </div>
+
+                {/* Generation Info */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">1 Credit</Badge>
@@ -415,7 +492,7 @@ const HeadshotGenerator = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">4 Headshots</Badge>
-                    <span className="text-sm">Different styles</span>
+                    <span className="text-sm">Different angles</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline">High Quality</Badge>

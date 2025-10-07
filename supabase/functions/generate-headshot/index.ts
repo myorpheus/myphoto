@@ -131,7 +131,7 @@ serve(async (req) => {
       }
 
       case "generate_image": {
-        const { model_id, prompt, num_images = 4 } = params;
+        const { model_id, prompt, num_images = 4, style = 'professional', gender = 'man', negative_prompt } = params;
 
         if (!model_id || !prompt) {
           return new Response(
@@ -176,7 +176,51 @@ serve(async (req) => {
           );
         }
 
-        // Call Astria API to generate images
+        // Generate style-specific prompt and negative prompt optimized for nano banana
+        const styleConfigs = {
+          professional: {
+            prompt: "professional, corporate headshot, full face frontal only, business attire, clean background, studio lighting, high resolution, sharp focus, professional photography, executive portrait",
+            negativePrompt: "no side profiles, casual clothing, blurry, low quality, dark lighting, unprofessional appearance, distorted features, artificial artifacts"
+          },
+          doctor: {
+            prompt: "doctor headshot, full face frontal only, white coat, medical professional, clinical setting, stethoscope, healthcare professional, professional medical portrait, clean white background", 
+            negativePrompt: "no side profiles, casual clothing, non-medical setting, blurry, low quality, unprofessional appearance, distorted features, artificial artifacts"
+          },
+          boudoir: {
+            man: {
+              prompt: "boudoir, mid body shot, shirtless if man, artistic lighting, dramatic shadows, masculine aesthetic, professional boudoir photography, tasteful artistic portrait, sophisticated composition",
+              negativePrompt: "no side profiles, explicit content, inappropriate poses, poor lighting, unprofessional appearance, distorted features, artificial artifacts, full nudity"
+            },
+            woman: {
+              prompt: "boudoir, mid body shot, subtle, sexy lingerie, if woman detected, elegant feminine aesthetic, artistic lighting, dramatic shadows, professional boudoir photography, graceful pose, sophisticated composition",
+              negativePrompt: "no side profiles, explicit content, inappropriate poses, poor lighting, unprofessional appearance, distorted features, artificial artifacts, full nudity"
+            }
+          }
+        };
+
+        let enhancedPrompt = prompt;
+        let finalNegativePrompt = "no side profiles, blurry, low quality, distorted features, artificial artifacts";
+
+        if (style === 'boudoir') {
+          const boudoirConfig = styleConfigs.boudoir[gender as 'man' | 'woman'] || styleConfigs.boudoir.man;
+          enhancedPrompt = `${prompt}, ${boudoirConfig.prompt}`;
+          finalNegativePrompt = boudoirConfig.negativePrompt;
+        } else {
+          const styleConfig = styleConfigs[style as 'professional' | 'doctor'] || styleConfigs.professional;
+          enhancedPrompt = `${prompt}, ${styleConfig.prompt}`;
+          finalNegativePrompt = styleConfig.negativePrompt;
+        }
+
+        // Use custom negative prompt if provided, otherwise use style default
+        if (negative_prompt) {
+          finalNegativePrompt = negative_prompt;
+        }
+
+        console.log("🍌 Using nano banana generation model");
+        console.log("🎨 Enhanced prompt:", enhancedPrompt);
+        console.log("🚫 Negative prompt:", finalNegativePrompt);
+
+        // Call Astria API to generate images with nano banana model
         const response = await fetch(`https://api.astria.ai/tunes/${model.astria_model_id}/prompts`, {
           method: "POST",
           headers: {
@@ -185,9 +229,35 @@ serve(async (req) => {
           },
           body: JSON.stringify({
             prompt: {
-              text: prompt,
+              text: enhancedPrompt,
+              negative_prompt: finalNegativePrompt,
               num_images: num_images,
               callback: `${SUPABASE_URL}/functions/v1/astria-webhook`,
+              // Nano banana generation parameters
+              w: 768,
+              h: 1024,
+              steps: 25,
+              cfg_scale: 7,
+              seed: -1,
+              controlnet: "canny",
+              controlnet_conditioning_scale: 0.8,
+              controlnet_txt2img: true,
+              use_lpw: true,
+              use_upscaler: true,
+              upscaler_strength: 0.1,
+              super_resolution: true,
+              // Enable nano banana model
+              face_correct: true,
+              face_swap: false,
+              inpaint_faces: true,
+              restore_faces: true,
+              // Nano banana specific optimizations
+              hires_fix: true,
+              enable_attention_slicing: true,
+              enable_vae_slicing: true,
+              // Force nano banana backend selection
+              backend: "nano-banana",
+              model_type: "nano-banana-v2"
             },
           }),
         });
