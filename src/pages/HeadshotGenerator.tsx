@@ -53,7 +53,12 @@ const HeadshotGenerator = () => {
   };
 
   const handlePhotosSelected = async (files: File[]) => {
+    console.log('🚀 Generate headshots button clicked - Starting debug');
+    console.log('📊 User credits:', userCredits);
+    console.log('📸 Files selected:', files.length);
+    
     if (userCredits < 1) {
+      console.error('❌ Insufficient credits:', userCredits);
       toast({
         title: 'Insufficient Credits',
         description: 'You need at least 1 credit to generate headshots. Purchase more credits to continue.',
@@ -67,20 +72,34 @@ const HeadshotGenerator = () => {
     setIsProcessing(true);
 
     try {
+      console.log('🔐 Getting user authentication...');
       const user = await completeSupabaseService.getCurrentUser();
-      if (!user) throw new Error('User not authenticated');
+      if (!user) {
+        console.error('❌ User not authenticated');
+        throw new Error('User not authenticated');
+      }
+      console.log('✅ User authenticated:', user.id);
 
       // Create model name
       const modelName = `headshots-${Date.now()}`;
+      console.log('📝 Model name created:', modelName);
 
       // Get user session for authentication
+      console.log('🎫 Getting user session...');
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('User not authenticated');
+      if (!session) {
+        console.error('❌ No session found');
+        throw new Error('User not authenticated');
+      }
+      console.log('✅ Session obtained, token length:', session.access_token?.length || 0);
 
       // Convert images to base64 for secure transmission
+      console.log('🔄 Converting images to base64...');
       const imageBase64 = await filesToBase64(files);
+      console.log('✅ Images converted, count:', imageBase64.length);
 
       // Train model with secure edge function
+      console.log('📡 Calling generate-headshot edge function...');
       const response = await fetch(`https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/generate-headshot`, {
         method: 'POST',
         headers: {
@@ -96,14 +115,30 @@ const HeadshotGenerator = () => {
         }),
       });
 
+      console.log('📡 Edge function response status:', response.status);
+      console.log('📡 Edge function response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to start training');
+        console.error('❌ Edge function failed with status:', response.status);
+        const errorText = await response.text();
+        console.error('❌ Error response body:', errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { error: errorText };
+        }
+        
+        throw new Error(errorData.error || `HTTP ${response.status}: Failed to start training`);
       }
 
+      console.log('✅ Edge function succeeded, parsing response...');
       const astriaModel = await response.json();
+      console.log('📊 Astria model response:', astriaModel);
 
       // Save model to database
+      console.log('💾 Saving model to database...');
       const dbModel = await completeSupabaseService.createModel({
         user_id: user.id,
         astria_model_id: astriaModel.id,
@@ -129,10 +164,14 @@ const HeadshotGenerator = () => {
       await pollModelTraining(astriaModel.id, dbModel.id);
 
     } catch (error) {
-      console.error('Error training model:', error);
+      console.error('❌ COMPLETE ERROR DETAILS:');
+      console.error('Error object:', error);
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      
       toast({
-        title: 'Training Failed',
-        description: 'Failed to train your model. Please try again.',
+        title: 'Training Failed', 
+        description: `Failed to train your model: ${error instanceof Error ? error.message : 'Unknown error'}. Check console for details.`,
         variant: 'destructive',
       });
       setCurrentStep('upload');
@@ -333,6 +372,47 @@ const HeadshotGenerator = () => {
     setIsProcessing(false);
   };
 
+  // Debug function to test edge function configuration
+  const testConfiguration = async () => {
+    console.log('🧪 Testing edge function configuration...');
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error('❌ No session for config test');
+        return;
+      }
+      
+      const response = await fetch(`https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/generate-headshot`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'list_models' // This action exists in the edge function for debugging
+        }),
+      });
+
+      console.log('🧪 Config test response status:', response.status);
+      const responseText = await response.text();
+      console.log('🧪 Config test response:', responseText);
+      
+      toast({
+        title: 'Configuration Test',
+        description: `Edge function responded with status ${response.status}. Check console for details.`,
+      });
+      
+    } catch (error) {
+      console.error('❌ Configuration test failed:', error);
+      toast({
+        title: 'Configuration Test Failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 'upload':
@@ -392,6 +472,16 @@ const HeadshotGenerator = () => {
             >
               <Images className="w-4 h-4 mr-2" />
               Gallery
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={testConfiguration}
+              disabled={isProcessing}
+              className="text-xs"
+            >
+              🧪 Test Config
             </Button>
             
             <Card className="px-4 py-2">
