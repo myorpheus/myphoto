@@ -2777,18 +2777,23 @@ const { data, error } = await supabase.auth.signUp({
     - All security definer functions properly configured
     - All new users automatically get 'PRu' in appsource
     - First two users automatically get 'admin' role
+29. ✅ **RESOLVED: ASTRIA_API_KEY Configuration (2025-10-07)**:
+    - Set ASTRIA_API_KEY as Supabase secret via `supabase secrets set`
+    - Redeployed generate-headshot edge function
+    - Edge function now has access to API key via Deno.env.get()
+    - Fixed root cause of headshot generation failures
 
 ### 🔴 Critical Issues - **ACTION REQUIRED**
 
-#### 🚨 **URGENT: Headshot Generation Still Failing (2025-10-06)**
-**Issue:** User reports "generate headshot" button still produces no photos despite previous fixes
-**Previous Status:** Thought to be fixed - database methods enabled, API key added
-**Current Status:** 🔴 **CRITICAL - REQUIRES COMPREHENSIVE DEBUGGING**
+_No critical issues at this time._
 
-##### **Gemini CLI Analysis Results:**
-- **Environment Issue Detected:** Gemini CLI shows `VITE_ASTRIA_API_KEY=""` (empty) in production environment
-- **Database Layer:** Previously fixed - all methods enabled ✅  
-- **Workflow Analysis:** Complete 6-step diagnostic checklist created
+### ⚠️ Monitoring
+
+#### Headshot Generation Workflow
+**Status:** Monitoring after ASTRIA_API_KEY fix (2025-10-07)
+**Previous Issue:** Button produced no photos due to missing API key environment variable
+**Resolution:** API key now properly configured as Supabase secret
+**Action:** Monitor user reports to confirm fix is working in production
 
 ##### **🔍 COMPREHENSIVE DIAGNOSTIC CHECKLIST:**
 
