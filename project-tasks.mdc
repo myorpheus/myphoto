@@ -231,7 +231,7 @@
   - [ ] Optional: Extract auth diagnostics into separate utility
   - [ ] Write unit tests for Login flow
 
-##### 8. Gallery.tsx (460 lines → ~3 components <200 lines each) - **IN PROGRESS**
+##### 8. Gallery.tsx (460 lines → ~3 components <200 lines each) - **REFACTORING COMPLETE!**
 - ✅ **Created useGalleryData.ts hook**: State management and filtering logic (210 lines)
   * 9 useState hooks (images, loading, filters, search, sort, view mode, expiries)
   * 3 useEffect hooks (data loading, filtering/sorting, expiry monitoring)
@@ -243,15 +243,15 @@
   * Sort by dropdown (newest/oldest/by prompt)
   * Responsive flex layout with mobile stacking
   * TypeScript props interface
-- [ ] **Extract ImageGrid.tsx**: Image display grid component (lines 303-420)
-- [ ] **Update Gallery.tsx**: Integrate hook, FilterBar, ImageGrid - orchestrator only
-- **STATUS**: Hook ✅ (210 lines), FilterBar ✅ (68 lines). Next: ImageGrid extraction
-- **PROGRESS**: 2/4 major steps complete (50% done)
-- **NEXT ACTIONABLE STEP**: Extract ImageGrid.tsx component (grid/list view rendering)
+- ✅ **Extracted ImageGrid.tsx**: Image display grid component (180 lines)
+  * Grid view with hover download options
+  * List view with detailed metadata
+  * Expiry indicators and extend life buttons
+  * Resolution download support (4K, 1080p, 720p, original)
+  * Full TypeScript interfaces
+- ✅ **Updated Gallery.tsx**: Integrated hook, FilterBar, ImageGrid - orchestrator only
+- **STATUS**: Successfully reduced from 460 lines to **134 lines** (71% reduction - 326 lines saved!)
 - **NEXT STEPS**:
-  - [ ] Extract ImageGrid component (lines 303-420) - grid/list view with image cards
-  - [ ] Update Gallery.tsx to use useGalleryData hook + components
-  - [ ] Reduce Gallery.tsx from 460 lines to <150 lines
   - [ ] Write unit tests for hook and components
 
 ### Refactoring Success Metrics:
