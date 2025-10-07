@@ -25,7 +25,53 @@
 
 ---
 
-## 🚨 CRITICAL PRIORITY: Phase 0 - Core Generation Features
+## 🚨 CRITICAL PRIORITY: Phase 0 - Generate Headshots Functionality Fix
+
+### 🔥 IMMEDIATE FIX: Generate Headshots Button Not Working (CRITICAL - BLOCKING ALL USERS)
+**User Report:** Button "Generate Headshots" not working on /generate page
+**Impact:** ❌ Core functionality completely broken - no users can generate headshots
+**Priority:** 🔥 CRITICAL - ALL USERS BLOCKED
+
+#### Root Cause Analysis (via Gemini CLI):
+**Most Likely Issues:**
+1. **Configuration**: Missing or invalid `ASTRIA_API_KEY` in Supabase environment
+2. **Authentication**: User session expires/becomes invalid during process
+3. **Astria API**: API service down, quota exceeded, or webhook callback issues
+4. **Database**: RLS policies blocking model/image table operations
+5. **Frontend State**: React state management bugs preventing UI updates
+
+#### Immediate Action Checklist:
+- [ ] **Check Supabase Function Logs**: Inspect generate-headshot function logs for errors
+- [ ] **Verify ASTRIA_API_KEY**: Check environment variable in Supabase dashboard
+- [ ] **Test Direct API Call**: Call generate-headshot edge function directly via Postman
+- [ ] **Check User Credits**: Verify credits system working correctly
+- [ ] **Test Authentication**: Verify JWT session handling
+- [ ] **Debug Frontend State**: Add console.logs to track React state changes
+- [ ] **Review Database Policies**: Check RLS policies on models/images tables
+
+#### Files to Debug:
+- `supabase/functions/generate-headshot/index.ts` - Check logs and API calls
+- `src/pages/HeadshotGenerator.tsx` - Add debug logging
+- Supabase Dashboard - Environment variables and function logs
+
+---
+
+### 🎯 PHASE 0.5: Display Generated Images & Status Messages
+
+#### Missing Image Display After Generation
+- [ ] **Show Generated Images on /generate Page**: Display completed images after generation
+- [ ] **Add Success/Error Messages**: Toast notifications for generation results
+- [ ] **Real-time Progress Updates**: Show generation status during process
+- [ ] **Handle Generation Failures**: Graceful error handling with user feedback
+
+#### Gallery Page Improvements
+- [ ] **Fix Pending Images Display**: Ensure pending images show properly on /gallery
+- [ ] **Add Real-time Status Updates**: Live updates for image generation status
+- [ ] **Improve Loading States**: Better visual feedback during image loading
+
+---
+
+## 🚨 CRITICAL PRIORITY: Phase 1 - Core Generation Features
 
 ### 🎨 1. Photo Generation Style Selection (CRITICAL - NOT IMPLEMENTED)
 **User Request:** Add 3 style options on /generate page with negative prompts

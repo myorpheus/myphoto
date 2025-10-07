@@ -5,8 +5,8 @@
  * Using @google/generative-ai SDK with custom Google Cloud project
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 // Validate environment variables
 const GOOGLE_CLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT;
@@ -19,18 +19,23 @@ if (!GEMINI_API_KEY) {
 
 // Initialize Gemini API
 let GoogleGenerativeAI, HarmCategory, HarmBlockThreshold;
-try {
-  ({ GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = require('@google/generative-ai'));
-} catch (error) {
-  console.error('❌ Failed to import @google/generative-ai. Install with: npm install @google/generative-ai');
-  console.error(error.message);
-  process.exit(1);
+let genAI;
+
+async function initializeGemini() {
+  try {
+    const generativeAI = await import('@google/generative-ai');
+    ({ GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } = generativeAI);
+    genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+  } catch (error) {
+    console.error('❌ Failed to import @google/generative-ai. Install with: npm install @google/generative-ai');
+    console.error(error.message);
+    process.exit(1);
+  }
 }
 
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-
 // Model configuration for prompt enhancement
-const model = genAI.getGenerativeModel({ 
+function getModel() {
+  return genAI.getGenerativeModel({ 
   model: "gemini-2.0-flash-exp",
   generationConfig: {
     temperature: 0.7,
@@ -56,7 +61,8 @@ const model = genAI.getGenerativeModel({
       threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
     },
   ],
-});
+  });
+}
 
 /**
  * Process file inclusion syntax (@file, @dir/)
@@ -148,6 +154,7 @@ function shouldIgnoreDirectory(dirName) {
  */
 async function enhancePrompt(originalPrompt, style = 'professional', gender = 'man') {
   try {
+    const model = getModel();
     const enhancementPrompt = `You are an expert at creating highly detailed and effective prompts for AI image generation systems. 
 
 Your task is to enhance the following basic prompt for generating professional headshots using the Astria AI platform.
@@ -188,6 +195,7 @@ Provide only the enhanced prompt, no explanation or additional text.`;
  * Main CLI function
  */
 async function main() {
+  await initializeGemini();
   const args = process.argv.slice(2);
   if (args.length === 0) {
     console.log(`
@@ -237,6 +245,7 @@ Environment Variables Required:
     console.log(`📊 Input size: ${inputLength} characters`);
     
     // Generate content
+    const model = getModel();
     const result = await model.generateContent(fullPrompt);
     const response = await result.response;
     const text = response.text();
@@ -259,12 +268,10 @@ Environment Variables Required:
   }
 }
 
-// Handle prompt enhancement export for Node.js modules
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { enhancePrompt };
-}
+// Export functions for ES modules
+export { enhancePrompt };
 
 // Run CLI if called directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
