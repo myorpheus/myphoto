@@ -174,10 +174,16 @@
 - ✅ **Extracted GenerationOptions.tsx component** (25 lines)
 - ✅ **Extracted testConfiguration function to src/utils/headshotDebug.ts**
 - ✅ **Extracted all state management to src/hooks/useHeadshotGenerator.ts**
+- ✅ **Created headshotGeneratorService.ts** (238 lines) - API service layer
+  * trainModel: Train AI model with user images
+  * checkModelStatus: Poll training status
+  * generateImage: Generate headshots from trained model
+  * downloadImage: Download generated images
+  * Database operations: createModelRecord, createSampleRecords, getModelImages
+  * Auth operations: getCurrentUser, getUserCredits, getAccessToken
 - ✅ **Updated HeadshotGenerator.tsx to use extracted components and hook**
 - **STATUS**: Successfully reduced from 711 lines to **151 lines** (560 lines saved!)
 - **NEXT STEPS**:
-  - [ ] Create headshotGeneratorService.ts for API service layer
   - [ ] Write unit tests for new components and hook
 
 ##### 3. AdminDashboard.tsx (182 lines) - **ALREADY REFACTORED!**
