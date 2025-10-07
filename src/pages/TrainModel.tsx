@@ -2,17 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { ArrowLeft, Upload, Zap, Clock, CheckCircle, AlertCircle, Trash2, Download, RefreshCw } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { completeSupabaseService } from '@/services/supabase-complete';
 import { supabase } from '@/integrations/supabase/client';
 import { filesToBase64 } from '@/utils/file-utils';
+import TrainModelForm from '@/components/TrainModelForm';
+import TrainingResults from '@/components/TrainingResults';
 
 const TrainModel = () => {
   const [models, setModels] = useState<any[]>([]);
@@ -458,23 +456,6 @@ const TrainModel = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'trained': return 'bg-green-500';
-      case 'training': return 'bg-blue-500';
-      case 'failed': return 'bg-red-500';
-      default: return 'bg-yellow-500';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'trained': return <CheckCircle className="w-4 h-4" />;
-      case 'training': return <Clock className="w-4 h-4" />;
-      case 'failed': return <AlertCircle className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
-    }
-  };
 
   if (isLoading) {
     return (
@@ -513,277 +494,38 @@ const TrainModel = () => {
               <CardHeader>
                 <CardTitle>Train New AI Model</CardTitle>
                 <CardDescription>
-                  Upload photos to create a personalized AI model for generating headshots. 
+                  Upload photos to create a personalized AI model for generating headshots.
                   This is an admin-only feature for training models that can be used by all users.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Model Selection Options */}
-                <div className="space-y-4">
-                  <Label className="text-sm font-medium">Model Options</Label>
-                  <div className="flex gap-4">
-                    <Button 
-                      variant={!useExistingModel ? "default" : "outline"}
-                      onClick={() => setUseExistingModel(false)}
-                      disabled={isTraining}
-                    >
-                      Create New Model
-                    </Button>
-                    <Button 
-                      variant={useExistingModel ? "default" : "outline"}
-                      onClick={() => setUseExistingModel(true)}
-                      disabled={isTraining || astriaModels.length === 0}
-                    >
-                      Use Existing Model ({astriaModels.length})
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Existing Model Selection */}
-                {useExistingModel && astriaModels.length > 0 && (
-                  <div className="space-y-2">
-                    <Label htmlFor="existingModel" className="text-sm font-medium">
-                      Select Existing Model
-                    </Label>
-                    <Select 
-                      value={selectedExistingModel?.id?.toString() || ""} 
-                      onValueChange={(value) => {
-                        const model = astriaModels.find(m => m.id?.toString() === value);
-                        setSelectedExistingModel(model);
-                      }}
-                      disabled={isTraining}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choose an existing model..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {astriaModels.map((model) => (
-                          <SelectItem key={model.id} value={model.id?.toString() || ""}>
-                            <div className="flex items-center gap-2">
-                              <span>{model.name || `Model ${model.id}`}</span>
-                              {model.name && model.name.toLowerCase().includes('newheadhotman') && (
-                                <Badge variant="secondary">Default</Badge>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {selectedExistingModel && (
-                      <div className="text-xs text-muted-foreground">
-                        Status: {selectedExistingModel.status} • Last Updated: {selectedExistingModel.updated_at ? new Date(selectedExistingModel.updated_at).toLocaleDateString() : 'Unknown'}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Model Name - only show when creating new model */}
-                {!useExistingModel && (
-                  <div className="space-y-2">
-                    <label htmlFor="modelName" className="text-sm font-medium">
-                      Model Name
-                    </label>
-                    <Input
-                      id="modelName"
-                      type="text"
-                      value={modelName}
-                      onChange={(e) => setModelName(e.target.value)}
-                      placeholder="Enter model name (e.g., Professional Headshots v2)"
-                      disabled={isTraining}
-                    />
-                  </div>
-                )}
-
-                {/* File Upload */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">
-                    Training Photos (4-20 images)
-                  </label>
-                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
-                    <div className="text-center space-y-4">
-                      <Upload className="w-12 h-12 mx-auto text-muted-foreground" />
-                      <div>
-                        <p className="text-lg font-medium">Upload Training Photos</p>
-                        <p className="text-sm text-muted-foreground">
-                          Select 4-20 high-quality photos for optimal results
-                        </p>
-                      </div>
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={handleFileSelect}
-                        className="hidden"
-                        id="photo-upload"
-                        disabled={isTraining}
-                      />
-                      <Button 
-                        onClick={() => document.getElementById('photo-upload')?.click()}
-                        disabled={isTraining}
-                      >
-                        Choose Photos
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {selectedFiles.length > 0 && (
-                    <div className="mt-4">
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Selected {selectedFiles.length} photos:
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedFiles.map((file, index) => (
-                          <Badge key={index} variant="outline">
-                            {file.name}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Training Progress */}
-                {isTraining && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Training Progress</span>
-                      <span>{trainingProgress}%</span>
-                    </div>
-                    <Progress value={trainingProgress} className="w-full" />
-                    <p className="text-sm text-muted-foreground">
-                      Training your model... This may take several minutes.
-                    </p>
-                  </div>
-                )}
-
-                {/* Action Button */}
-                <Button 
-                  onClick={() => {
-                    console.log('🔘 Button clicked!');
-                    console.log('🔍 Button disabled state check:');
-                    console.log('  - isTraining:', isTraining);
-                    console.log('  - useExistingModel:', useExistingModel);
-                    if (useExistingModel) {
-                      console.log('  - selectedExistingModel:', selectedExistingModel);
-                      console.log('  - model status:', selectedExistingModel?.status);
-                    } else {
-                      console.log('  - modelName.trim():', modelName.trim());
-                      console.log('  - selectedFiles.length:', selectedFiles.length);
-                    }
-                    handleTrainModel();
-                  }}
-                  disabled={
-                    isTraining || 
-                    (useExistingModel 
-                      ? !selectedExistingModel || (selectedExistingModel.status && selectedExistingModel.status !== 'trained' && selectedExistingModel.status !== 'finished')
-                      : !modelName.trim() || selectedFiles.length < 4
-                    )
-                  }
-                  className="w-full"
-                  size="lg"
-                >
-                  {isTraining ? (
-                    <>
-                      <Clock className="w-4 h-4 mr-2 animate-spin" />
-                      {useExistingModel ? 'Adding Model...' : 'Training Model...'}
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-4 h-4 mr-2" />
-                      {useExistingModel ? 'Add Existing Model' : 'Start Training'}
-                    </>
-                  )}
-                </Button>
+                <TrainModelForm
+                  astriaModels={astriaModels}
+                  selectedExistingModel={selectedExistingModel}
+                  setSelectedExistingModel={setSelectedExistingModel}
+                  useExistingModel={useExistingModel}
+                  setUseExistingModel={setUseExistingModel}
+                  modelName={modelName}
+                  setModelName={setModelName}
+                  selectedFiles={selectedFiles}
+                  setSelectedFiles={setSelectedFiles}
+                  isTraining={isTraining}
+                  trainingProgress={trainingProgress}
+                  handleFileSelect={handleFileSelect}
+                  handleTrainModel={handleTrainModel}
+                />
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="existing" className="space-y-6">
-            {/* Refresh Models Header */}
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-semibold">Your Trained Models</h3>
-                <p className="text-sm text-muted-foreground">Models available for generating headshots</p>
-              </div>
-              <Button
-                onClick={async () => {
-                  console.log('🔄 Refreshing both user models and Astria models...');
-                  
-                  try {
-                    // Refresh both user models from database AND Astria models from API
-                    await Promise.all([
-                      loadUserModels(), 
-                      loadAstriaModels()
-                    ]);
-                    
-                    toast({
-                      title: 'Models Synced Successfully',
-                      description: `Updated your models and found ${astriaModels.length} models from Astria account`,
-                    });
-                    
-                    console.log('✅ Model sync completed');
-                  } catch (error) {
-                    console.error('❌ Error during model sync:', error);
-                    toast({
-                      title: 'Sync Failed',
-                      description: 'Failed to refresh models. Please try again.',
-                      variant: 'destructive',
-                    });
-                  }
-                }}
-                disabled={isLoadingAstriaModels || isLoading}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <RefreshCw className={`w-4 h-4 ${(isLoadingAstriaModels || isLoading) ? 'animate-spin' : ''}`} />
-                {(isLoadingAstriaModels || isLoading) ? 'Syncing...' : 'Sync Models'}
-              </Button>
-            </div>
-            <div className="grid gap-4">
-              {models.length === 0 ? (
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-center py-8">
-                      <Zap className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                      <h3 className="font-semibold text-lg">No Models Yet</h3>
-                      <p className="text-muted-foreground">
-                        Train your first AI model using the "Train New Model" tab.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                models.map((model) => (
-                  <Card key={model.id}>
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-lg">{model.name}</CardTitle>
-                          <CardDescription>
-                            Model ID: {model.id} • Astria ID: {model.astria_model_id}
-                          </CardDescription>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge 
-                            variant="outline" 
-                            className={`${getStatusColor(model.status)} text-white border-0`}
-                          >
-                            {getStatusIcon(model.status)}
-                            {model.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex justify-between items-center text-sm text-muted-foreground">
-                        <span>Last Updated: {new Date(model.updated_at).toLocaleDateString()}</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
+            <TrainingResults
+              models={models}
+              isLoading={isLoading}
+              isLoadingAstriaModels={isLoadingAstriaModels}
+              loadUserModels={loadUserModels}
+              loadAstriaModels={loadAstriaModels}
+            />
           </TabsContent>
         </Tabs>
       </main>
