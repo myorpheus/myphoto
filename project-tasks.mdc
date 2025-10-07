@@ -1,89 +1,643 @@
 # Project Tasks & Solutions
 
-## 🎯 MASTER FEATURE VERIFICATION CHECKLIST
-**Status:** Comprehensive review of all requested features
+## 🎯 COMPREHENSIVE FEATURE VERIFICATION & IMPLEMENTATION CHECKLIST
+**Status:** Codebase reviewed - Implementation status verified
 **Last Updated:** 2025-10-07
+**Codebase Review Date:** 2025-10-07
 
-### ✅ Feature Implementation Status Overview
+---
 
-#### 🎨 Photo Generation Style Options - DOCUMENTED ✅
-**Reference:** PHOTO_STYLE_ENHANCEMENT_CHECKLIST.md
-**Location:** /generate page
-- [x] Checklist created for style selection UI
-- [x] Professional/corporate headshot style documented
-- [x] Doctor headshot style documented  
-- [x] Boudoir style with gender detection documented
-- [x] Negative prompts specified (no side profiles)
-- [ ] **IMPLEMENTATION PENDING** - UI components need to be built
-- [ ] **IMPLEMENTATION PENDING** - Edge function prompt logic needs update
-- [ ] **IMPLEMENTATION PENDING** - Gemini 2.5 Flash integration needs completion
+## 📊 IMPLEMENTATION STATUS SUMMARY
 
-**Implementation Files Required:**
-- `src/pages/HeadshotGenerator.tsx` - Add style selection RadioGroup
-- `supabase/functions/generate-headshot/index.ts` - Update prompt building logic
-- Style configs: professional, doctor, boudoir with gender detection
+| Feature | Status | Files Affected | Priority |
+|---------|--------|---------------|----------|
+| Photo Style Selection UI | ❌ NOT IMPLEMENTED | HeadshotGenerator.tsx | CRITICAL |
+| Gemini 2.5 Flash Prompt Gen | ❌ NOT IMPLEMENTED | generate-headshot/index.ts | CRITICAL |
+| Start Training Button | ⚠️ DEBUG ONLY | TrainModel.tsx | HIGH |
+| Model Sync Button | ✅ IMPLEMENTED | TrainModel.tsx (lines 708-741) | COMPLETE |
+| Show Update Dates | ✅ IMPLEMENTED | TrainModel.tsx | COMPLETE |
+| Full Gallery on Overview | ❌ NOT IMPLEMENTED | Overview.tsx (shows only 6) | HIGH |
+| Multi-Resolution Downloads | ❌ NOT IMPLEMENTED | None | HIGH |
+| Gallery Page | ❌ NOT IMPLEMENTED | None (page doesn't exist) | HIGH |
+| Gallery Link on /generate | ❌ NOT IMPLEMENTED | HeadshotGenerator.tsx | MEDIUM |
+| Pending Images Display | ❌ NOT IMPLEMENTED | HeadshotGenerator.tsx | MEDIUM |
+| 24-Hour Image Lifecycle | ❌ NOT IMPLEMENTED | Database & Edge Function | MEDIUM |
 
-#### 🔧 Admin Train Page Issues - DOCUMENTED ✅
-**Reference:** START_TRAINING_DEBUG_SUMMARY.md, MODEL_SYNC_FEATURE_SUMMARY.md
-**Location:** /admin/train page
+---
 
-**Start Training Button Fix:**
-- [x] Debug logging added to TrainModel.tsx ✅
-- [x] Enhanced error handling implemented ✅
-- [x] Button state monitoring added ✅
-- [ ] **VERIFICATION NEEDED** - Test if issue is fully resolved
+## 🚨 CRITICAL PRIORITY: Phase 0 - Core Generation Features
 
-**Model Sync Button:**
-- [x] Sync button added to Existing Models tab ✅
-- [x] Refreshes both database and Astria models ✅
-- [x] Shows latest update date for each model ✅
-- [x] Comprehensive error handling implemented ✅
-- [ ] **VERIFICATION NEEDED** - Test sync functionality
+### 🎨 1. Photo Generation Style Selection (CRITICAL - NOT IMPLEMENTED)
+**User Request:** Add 3 style options on /generate page with negative prompts
+**Current State:** ❌ NO style selection UI exists in HeadshotGenerator.tsx
+**Impact:** Users cannot select photo generation styles
 
-**Update Date Display:**
-- [x] Shows last update date instead of create date ✅
-- [x] Consistent date formatting across UI ✅
+#### Implementation Checklist:
+- [ ] **UI Component**: Add style selection RadioGroup to HeadshotGenerator.tsx
+  - [ ] Create StyleSelector component with 3 options
+  - [ ] Professional/corporate headshot option
+  - [ ] Doctor headshot option
+  - [ ] Boudoir option (with gender selector: Man/Woman)
+  - [ ] Use existing ModelTypeSelector pattern from TrainModel.tsx
+  - [ ] Add state management for selected style and gender
+  
+- [ ] **Style Configuration**: Define style configs in HeadshotGenerator.tsx
+  ```typescript
+  const styleConfigs = {
+    professional: {
+      prompt: "professional, corporate headshot, full face frontal only",
+      negativePrompt: "no side profiles"
+    },
+    doctor: {
+      prompt: "doctor headshot, full face frontal only",
+      negativePrompt: "no side profiles"
+    },
+    boudoir: {
+      man: {
+        prompt: "boudoir, mid body shot, shirtless if man",
+        negativePrompt: "no side profiles"
+      },
+      woman: {
+        prompt: "boudoir, mid body shot, subtle, sexy lingerie, if woman detected",
+        negativePrompt: "no side profiles"
+      }
+    }
+  }
+  ```
 
-#### 🖼️ Gallery & Image Management - DOCUMENTED ✅
-**Reference:** project-tasks.mdc Phase 0, lines 119-303
-**Locations:** /overview, /generate, /gallery
+- [ ] **Edge Function Update**: Modify generate-headshot/index.ts
+  - [ ] Add `style` parameter to generate_image action (lines 140-244)
+  - [ ] Add `negative_prompt` parameter to Astria API call
+  - [ ] Add `gender` parameter for boudoir style
+  - [ ] Build prompt based on style configuration
+  - [ ] Validate style parameter server-side
 
-**Overview Page Photo Gallery:**
-- [x] Checklist created for full gallery display ✅
-- [x] Multi-resolution download system designed ✅
-- [x] Database schema defined (image metadata, downloads) ✅
-- [x] Edge function plan created (resize-image) ✅
-- [x] 4K/1080p/720p download options specified ✅
-- [ ] **IMPLEMENTATION PENDING** - All gallery components
-- [ ] **IMPLEMENTATION PENDING** - Resize edge function
-- [ ] **IMPLEMENTATION PENDING** - Database migration
+- [ ] **API Integration**: Update Astria API calls
+  - [ ] Add negative_prompt to Astria prompts request body
+  - [ ] Test negative prompt effectiveness with Astria API
+  - [ ] Handle edge cases (undefined style defaults to professional)
 
-**Generate Page Enhancements:**
-- [x] Checklist created for gallery link ✅
-- [x] Pending generations display documented ✅
-- [x] Status updates design specified ✅
-- [ ] **IMPLEMENTATION PENDING** - Gallery link UI
-- [ ] **IMPLEMENTATION PENDING** - Pending images section
+#### Files to Modify:
+- `src/pages/HeadshotGenerator.tsx` - Add UI components (lines 1-436)
+- `supabase/functions/generate-headshot/index.ts` - Add style logic (lines 140-244)
 
-**24-Hour Image Lifecycle:**
-- [x] Database schema for expiry tracking defined ✅
-- [x] Cleanup function logic documented ✅
-- [x] Cron job scheduling planned ✅
-- [ ] **IMPLEMENTATION PENDING** - Database migration
-- [ ] **IMPLEMENTATION PENDING** - Cleanup edge function
-- [ ] **IMPLEMENTATION PENDING** - Cron configuration
+#### Success Criteria:
+- [ ] Users can select 3 distinct styles on /generate page
+- [ ] Boudoir style shows gender selection (Man/Woman)
+- [ ] Selected style passed to edge function correctly
+- [ ] Astria generates images matching selected style
+- [ ] Negative prompts prevent side profile images
 
-#### 🤖 Gemini 2.5 Flash - Nano Banana Integration
-**Status:** PARTIALLY DOCUMENTED
-- [x] Mentioned in PHOTO_STYLE_ENHANCEMENT_CHECKLIST.md ✅
-- [ ] **NEEDS CLARIFICATION** - Specific integration details needed
-- [ ] **IMPLEMENTATION PENDING** - Update edge function to use Gemini
-- [ ] **VERIFICATION NEEDED** - Confirm Nano Banana is for image generation
+---
 
-**Questions to Address:**
-- Is Nano Banana (google/gemini-2.5-flash-image-preview) for generating images?
-- Or is it for generating better Astria prompts via AI Gateway?
-- Should it replace current prompt generation logic?
+### 🤖 2. Gemini 2.5 Flash "Nano Banana" Integration (CRITICAL - NOT IMPLEMENTED)
+**User Request:** Use Gemini 2.5 Flash for Astria prompt generation
+**Current State:** ❌ NO Gemini integration exists in generate-headshot/index.ts
+**Impact:** Basic prompts used, not leveraging AI for better prompts
+
+#### ⚠️ CLARIFICATION NEEDED:
+**Question for User:** What is the intended use of Gemini 2.5 Flash "Nano Banana"?
+- **Option A:** Generate enhanced/optimized prompts for Astria API using AI
+- **Option B:** Generate images directly (Nano Banana is image generation model)
+- **Option C:** Both - use for prompt enhancement AND image generation
+
+**Assuming Option A (Prompt Enhancement):**
+
+#### Implementation Checklist:
+- [ ] **Enable Lovable AI**: Configure LOVABLE_API_KEY in Supabase
+- [ ] **Create Gemini Prompt Generator**: New edge function or add to generate-headshot
+  - [ ] Use model: `google/gemini-2.5-flash-image-preview` (Nano Banana)
+  - [ ] Input: User's style selection + base requirements
+  - [ ] Output: Enhanced Astria-optimized prompt
+  - [ ] Add system prompt for headshot generation expertise
+
+- [ ] **Prompt Enhancement Logic**:
+  ```typescript
+  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'google/gemini-2.5-flash-image-preview',
+      messages: [
+        { role: 'system', content: 'You are an expert at creating Astria AI prompts for professional headshots...' },
+        { role: 'user', content: `Enhance this prompt for ${style}: ${basePrompt}` }
+      ]
+    })
+  });
+  ```
+
+- [ ] **Integration Points**:
+  - [ ] Call Gemini before Astria API in generate_image action
+  - [ ] Use enhanced prompt for Astria generation
+  - [ ] Log original vs enhanced prompts for comparison
+  - [ ] Add fallback to original prompt if Gemini fails
+  - [ ] Handle rate limiting (429) and payment errors (402)
+
+- [ ] **Error Handling**:
+  - [ ] Catch and surface Lovable AI rate limit errors
+  - [ ] Show user-friendly messages for API failures
+  - [ ] Implement retry logic with exponential backoff
+
+#### Files to Create/Modify:
+- `supabase/functions/generate-headshot/index.ts` - Add Gemini integration (before line 140)
+- Secrets: Ensure `LOVABLE_API_KEY` is configured
+
+#### Success Criteria:
+- [ ] Gemini 2.5 Flash generates enhanced prompts
+- [ ] Astria uses Gemini-enhanced prompts for generation
+- [ ] Image quality improves with AI-optimized prompts
+- [ ] Error handling works for rate limits and failures
+
+---
+
+### 🔧 3. Start Training Button Fix (DEBUG ADDED - NEEDS VERIFICATION)
+**User Request:** Fix non-working start training button on /admin/train
+**Current State:** ⚠️ Debug logging added but underlying issue may persist
+**Code Location:** TrainModel.tsx (lines 660-696)
+
+#### Current Implementation:
+- ✅ Debug logging added to button click (lines 661-673)
+- ✅ useEffect monitoring button disabled state (lines 32-45)
+- ✅ Enhanced error handling with console logs
+- ❓ Root cause may not be fully resolved
+
+#### Verification Checklist:
+- [ ] **Test Complete Workflow**:
+  - [ ] Navigate to /admin/train page
+  - [ ] Open browser console (F12)
+  - [ ] Select "Create New Model" tab
+  - [ ] Enter model name
+  - [ ] Upload 4-20 photos
+  - [ ] Click "Start Training" button
+  - [ ] Verify training starts successfully
+  - [ ] Check console for any error messages
+
+- [ ] **Check Common Issues**:
+  - [ ] Verify ASTRIA_API_KEY is configured correctly
+  - [ ] Test with valid image files (JPG/PNG)
+  - [ ] Ensure user has sufficient permissions
+  - [ ] Check network tab for API call failures
+  - [ ] Verify edge function logs for errors
+
+- [ ] **If Still Not Working**:
+  - [ ] Review edge function logs: [Edge Function Logs](https://supabase.com/dashboard/project/imzlzufdujhcbebibgpj/functions/generate-headshot/logs)
+  - [ ] Check for validation failures in handleTrainModel (lines 439-530)
+  - [ ] Verify file conversion to base64 works correctly
+  - [ ] Test with different image quantities (4, 10, 20)
+
+#### Files Modified:
+- ✅ `src/pages/TrainModel.tsx` - Debug logging added (lines 32-45, 661-673)
+
+#### Next Steps:
+- [ ] User testing required to confirm fix
+- [ ] If issue persists, review console logs and report findings
+- [ ] May need additional debugging or code fixes
+
+---
+
+## 🖼️ HIGH PRIORITY: Phase 1 - Gallery & Image Management
+
+### 📸 4. Full Gallery Display on Overview Page (NOT IMPLEMENTED)
+**User Request:** Show ALL generated photos on /overview (not just 6)
+**Current State:** ❌ Shows only last 6 images (Overview.tsx line 40)
+**Impact:** Users cannot see their full image history
+
+#### Implementation Checklist:
+- [ ] **Modify Overview.tsx**:
+  - [ ] Remove `.slice(0, 6)` limit (line 40)
+  - [ ] Query ALL user images from database
+  - [ ] Add pagination component (20-30 images per page)
+  - [ ] Add filtering: All, Recent, By Model, By Date
+  - [ ] Add search functionality for images
+  - [ ] Show image metadata (date, model, status, size)
+  - [ ] Display image count and storage stats
+
+- [ ] **Create ImageGalleryGrid Component**:
+  - [ ] Responsive grid layout (2-3-6 columns)
+  - [ ] Image cards with hover effects
+  - [ ] Show generation date and status
+  - [ ] Add click for full preview modal
+  - [ ] Lazy loading for performance
+  - [ ] Empty state for no images
+
+- [ ] **Add Pagination Component**:
+  - [ ] Page controls (Previous/Next)
+  - [ ] Page number indicators
+  - [ ] Items per page selector (20/30/50)
+  - [ ] Total count display
+
+- [ ] **Database Query Enhancement**:
+  - [ ] Modify `getUserImages()` in supabase-complete.ts
+  - [ ] Add pagination parameters (page, limit)
+  - [ ] Add filtering parameters (status, date range)
+  - [ ] Add sorting (newest first, oldest first)
+  - [ ] Return total count for pagination
+
+#### Files to Create/Modify:
+- `src/pages/Overview.tsx` - Replace recent images section (lines 143-166)
+- `src/components/ImageGalleryGrid.tsx` - NEW reusable gallery component
+- `src/components/Pagination.tsx` - NEW pagination component
+- `src/services/supabase-complete.ts` - Enhance getUserImages method
+
+#### Success Criteria:
+- [ ] Overview page displays ALL user images (not limited to 6)
+- [ ] Pagination works correctly with page controls
+- [ ] Filtering and search functionality works
+- [ ] Performance is good with large image collections
+- [ ] UI is clean and professional
+
+---
+
+### 📥 5. Multi-Resolution Download System (NOT IMPLEMENTED)
+**User Request:** Download images in 4K, 1080p, or 720p
+**Current State:** ❌ NO download functionality exists
+**Impact:** Users cannot download their generated images
+
+#### Implementation Checklist:
+
+##### Database Schema Updates:
+- [ ] **Add Image Metadata Columns**:
+  ```sql
+  ALTER TABLE public.images 
+  ADD COLUMN original_width INTEGER,
+  ADD COLUMN original_height INTEGER,
+  ADD COLUMN file_size_bytes BIGINT,
+  ADD COLUMN thumbnail_url TEXT;
+  ```
+
+- [ ] **Create Download Tracking Table**:
+  ```sql
+  CREATE TABLE IF NOT EXISTS public.image_downloads (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    image_id BIGINT REFERENCES public.images(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    resolution TEXT NOT NULL CHECK (resolution IN ('4k', '1080p', '720p', 'original')),
+    downloaded_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    file_size_bytes BIGINT
+  );
+  
+  ALTER TABLE public.image_downloads ENABLE ROW LEVEL SECURITY;
+  
+  CREATE POLICY "Users can view own downloads"
+  ON public.image_downloads FOR SELECT
+  TO authenticated
+  USING (auth.uid() = user_id);
+  
+  CREATE POLICY "Users can insert own downloads"
+  ON public.image_downloads FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+  ```
+
+##### Edge Function for Image Resizing:
+- [ ] **Create resize-image Edge Function**:
+  - [ ] File: `supabase/functions/resize-image/index.ts`
+  - [ ] Accept: image_id, resolution (4k/1080p/720p)
+  - [ ] Validate user owns image (RLS check)
+  - [ ] Fetch original image from Supabase Storage or URL
+  - [ ] Resize using Sharp or Deno Image library
+  - [ ] Apply quality compression (90%/85%/80%)
+  - [ ] Maintain aspect ratio
+  - [ ] Cache resized versions (optional)
+  - [ ] Track download in image_downloads table
+  - [ ] Return signed URL or base64
+
+- [ ] **Resolution Specifications**:
+  - 4K: 3840x2160, quality 90%, format WebP/JPG
+  - 1080p: 1920x1080, quality 85%, format WebP/JPG
+  - 720p: 1280x720, quality 80%, format WebP/JPG
+  - Maintain original aspect ratio for all
+
+##### UI Components:
+- [ ] **Create ImageDownloadMenu Component**:
+  - [ ] Dropdown menu with resolution options
+  - [ ] Show estimated file size for each
+  - [ ] Download progress indicator
+  - [ ] Success/error notifications
+  - [ ] Track download in analytics
+
+- [ ] **Integrate into Image Cards**:
+  - [ ] Add download button to each image card
+  - [ ] Show download menu on click
+  - [ ] Display download status (preparing/downloading)
+  - [ ] Enable batch download (zip multiple images)
+
+##### Service Layer:
+- [ ] **Add Download Methods to supabase-complete.ts**:
+  - [ ] `downloadImage(imageId, resolution)`
+  - [ ] `trackDownload(imageId, resolution, fileSize)`
+  - [ ] `getBatchDownloadUrl(imageIds, resolution)`
+  - [ ] Handle authentication and permissions
+
+#### Files to Create/Modify:
+- `supabase/functions/resize-image/index.ts` - NEW edge function
+- `src/components/ImageDownloadMenu.tsx` - NEW download dropdown
+- `src/pages/Overview.tsx` - Add download buttons to images
+- `src/services/supabase-complete.ts` - Add download methods
+- Database migration file - Add metadata columns and downloads table
+- `supabase/config.toml` - Add resize-image function config
+
+#### Dependencies:
+- [ ] Install image processing library (Sharp or Deno Image)
+- [ ] Configure CORS for Supabase Storage
+- [ ] Set up signed URLs for secure downloads
+
+#### Success Criteria:
+- [ ] Users can select download resolution (4K/1080p/720p)
+- [ ] Images are resized correctly maintaining quality
+- [ ] Download tracking works in database
+- [ ] Performance is acceptable (< 5 seconds for 4K)
+- [ ] Error handling works for failures
+- [ ] Batch download works for multiple images
+
+---
+
+### 🎞️ 6. Gallery Page Creation (NOT IMPLEMENTED)
+**User Request:** Dedicated gallery page accessible from /generate
+**Current State:** ❌ Gallery page does not exist
+**Impact:** No centralized view for all generated images
+
+#### Implementation Checklist:
+- [ ] **Create Gallery Page Component**:
+  - [ ] File: `src/pages/Gallery.tsx`
+  - [ ] Use ImageGalleryGrid component (from Overview)
+  - [ ] Add advanced filtering (status, model, date range)
+  - [ ] Add sorting options (newest, oldest, favorites)
+  - [ ] Show image metadata prominently
+  - [ ] Add search by prompt or model name
+  - [ ] Implement favorites/starring system
+  - [ ] Add image deletion with confirmation
+
+- [ ] **Add Route to App.tsx**:
+  ```typescript
+  <Route path="/gallery" element={<Gallery />} />
+  ```
+
+- [ ] **Image Preview Modal**:
+  - [ ] Full-size image viewer
+  - [ ] Navigation between images (prev/next)
+  - [ ] Zoom in/out functionality
+  - [ ] Download button with resolution selector
+  - [ ] Share button (social media integration)
+  - [ ] Delete button (with confirmation)
+
+- [ ] **Filtering & Search UI**:
+  - [ ] Status filter: All, Completed, Generating, Failed
+  - [ ] Date range picker
+  - [ ] Model filter dropdown
+  - [ ] Search input (prompt text search)
+  - [ ] Clear all filters button
+
+- [ ] **Gallery Statistics**:
+  - [ ] Total images count
+  - [ ] Storage used (MB/GB)
+  - [ ] Images by status breakdown
+  - [ ] Most used model
+  - [ ] Average generation time
+
+#### Files to Create:
+- `src/pages/Gallery.tsx` - NEW main gallery page
+- `src/components/ImagePreviewModal.tsx` - NEW full-size viewer
+- `src/components/ImageFilters.tsx` - NEW filtering UI
+- `src/App.tsx` - Add /gallery route
+
+#### Success Criteria:
+- [ ] Gallery page accessible at /gallery route
+- [ ] Displays all user images with metadata
+- [ ] Filtering and search work correctly
+- [ ] Image preview modal functional
+- [ ] Performance good with large collections
+
+---
+
+### 🔗 7. Gallery Link on /generate Page (NOT IMPLEMENTED)
+**User Request:** Add link to gallery from generation page
+**Current State:** ❌ NO gallery link exists in HeadshotGenerator.tsx
+**Impact:** Users must navigate manually to gallery
+
+#### Implementation Checklist:
+- [ ] **Add Gallery Link to Header**:
+  - [ ] Modify HeadshotGenerator.tsx header section
+  - [ ] Add "View Gallery" button next to "Back" button
+  - [ ] Use Gallery icon (lucide-react)
+  - [ ] Link to /gallery route
+  - [ ] Show badge with pending image count (optional)
+
+- [ ] **Example Implementation**:
+  ```typescript
+  <div className="flex items-center gap-4">
+    <Button variant="ghost" onClick={() => navigate('/overview')}>
+      <ArrowLeft className="w-4 h-4 mr-2" />
+      Back
+    </Button>
+    <Button variant="outline" onClick={() => navigate('/gallery')}>
+      <Gallery className="w-4 h-4 mr-2" />
+      View Gallery
+    </Button>
+  </div>
+  ```
+
+#### Files to Modify:
+- `src/pages/HeadshotGenerator.tsx` - Add gallery link to header (around line 365)
+
+#### Success Criteria:
+- [ ] Gallery link visible on /generate page
+- [ ] Clicking link navigates to /gallery
+- [ ] Button styling matches page design
+
+---
+
+### ⏳ 8. Pending Images Display on /generate (NOT IMPLEMENTED)
+**User Request:** Show pending/generating images on generation page
+**Current State:** ❌ NO pending images section exists
+**Impact:** Users don't see real-time generation status
+
+#### Implementation Checklist:
+- [ ] **Add Pending Images Section**:
+  - [ ] Create section below main generation form
+  - [ ] Query user's images with status IN ('pending', 'generating')
+  - [ ] Display as grid or list with status badges
+  - [ ] Show progress indicators for generating images
+  - [ ] Add refresh button to update statuses
+  - [ ] Auto-refresh every 10-15 seconds
+
+- [ ] **Real-time Status Updates**:
+  - [ ] Use Supabase Realtime subscriptions
+  - [ ] Subscribe to images table changes
+  - [ ] Update UI when status changes
+  - [ ] Show toast notification on completion
+  - [ ] Highlight newly completed images
+
+- [ ] **Pending Image Cards**:
+  - [ ] Show placeholder or thumbnail
+  - [ ] Display status badge (Pending/Generating/Processing)
+  - [ ] Show estimated completion time
+  - [ ] Add cancel button (optional)
+  - [ ] Link to full gallery view
+
+- [ ] **SQL for Realtime**:
+  ```sql
+  ALTER TABLE public.images REPLICA IDENTITY FULL;
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.images;
+  ```
+
+#### Files to Modify:
+- `src/pages/HeadshotGenerator.tsx` - Add pending section (after upload form)
+- `src/components/PendingImageCard.tsx` - NEW component for pending images
+
+#### Success Criteria:
+- [ ] Pending images section visible on /generate page
+- [ ] Real-time updates work automatically
+- [ ] Status badges accurate and clear
+- [ ] Performance acceptable with many images
+
+---
+
+### ⏰ 9. 24-Hour Image Lifecycle & Auto-Cleanup (NOT IMPLEMENTED)
+**User Request:** Store completed headshots for 24 hours then auto-delete
+**Current State:** ❌ NO expiry tracking or cleanup exists
+**Impact:** Images stored indefinitely (storage bloat)
+
+#### Implementation Checklist:
+
+##### Database Schema Changes:
+- [ ] **Add Expiry Column to images Table**:
+  ```sql
+  ALTER TABLE public.images 
+  ADD COLUMN expires_at TIMESTAMP WITH TIME ZONE 
+  DEFAULT (now() + INTERVAL '24 hours');
+  
+  -- Set expiry for existing images
+  UPDATE public.images 
+  SET expires_at = created_at + INTERVAL '24 hours' 
+  WHERE expires_at IS NULL;
+  ```
+
+- [ ] **Create Cleanup Function**:
+  ```sql
+  CREATE OR REPLACE FUNCTION public.delete_expired_images()
+  RETURNS TABLE(deleted_count INT, deleted_ids UUID[]) AS $$
+  DECLARE
+    del_count INT;
+    del_ids UUID[];
+  BEGIN
+    -- Delete expired completed images
+    WITH deleted AS (
+      DELETE FROM public.images 
+      WHERE expires_at < now() 
+      AND status = 'completed'
+      RETURNING id
+    )
+    SELECT array_agg(id) INTO del_ids FROM deleted;
+    
+    del_count := array_length(del_ids, 1);
+    
+    -- Log cleanup
+    INSERT INTO public.cleanup_logs (deleted_count, deleted_ids)
+    VALUES (del_count, del_ids);
+    
+    RETURN QUERY SELECT del_count, del_ids;
+  END;
+  $$ LANGUAGE plpgsql SECURITY DEFINER;
+  ```
+
+- [ ] **Create Cleanup Logs Table (optional)**:
+  ```sql
+  CREATE TABLE IF NOT EXISTS public.cleanup_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    deleted_count INT,
+    deleted_ids UUID[],
+    cleanup_time TIMESTAMP WITH TIME ZONE DEFAULT now()
+  );
+  ```
+
+##### Scheduled Cleanup:
+- [ ] **Enable pg_cron Extension**:
+  ```sql
+  CREATE EXTENSION IF NOT EXISTS pg_cron;
+  ```
+
+- [ ] **Schedule Hourly Cleanup**:
+  ```sql
+  SELECT cron.schedule(
+    'delete-expired-images',
+    '0 * * * *', -- Every hour at minute 0
+    $$SELECT public.delete_expired_images()$$
+  );
+  ```
+
+##### Edge Function Cleanup (Alternative):
+- [ ] **Create cleanup-expired-images Edge Function**:
+  - [ ] File: `supabase/functions/cleanup-expired-images/index.ts`
+  - [ ] Call delete_expired_images() database function
+  - [ ] Log results to console
+  - [ ] Send admin notification on large cleanups (optional)
+  - [ ] Schedule via external cron service (GitHub Actions, cron-job.org)
+
+##### User Notifications:
+- [ ] **Add Expiry Warnings**:
+  - [ ] Show countdown on image cards (e.g., "Expires in 8 hours")
+  - [ ] Send notification 2 hours before expiry
+  - [ ] Add "Keep Forever" option (premium feature)
+  - [ ] Allow users to download before expiry
+
+- [ ] **Create ExpiryBadge Component**:
+  - [ ] Show time remaining until expiry
+  - [ ] Color-coded urgency (green > 12h, yellow 2-12h, red < 2h)
+  - [ ] Tooltip with exact expiry time
+
+#### Files to Create/Modify:
+- Database migration file - Add expires_at column and cleanup function
+- `supabase/functions/cleanup-expired-images/index.ts` - NEW cleanup edge function
+- `src/components/ExpiryBadge.tsx` - NEW expiry countdown component
+- `src/pages/Overview.tsx` - Add expiry badges to images
+- `src/pages/Gallery.tsx` - Add expiry badges and filters
+- `supabase/config.toml` - Add cleanup function config (if using edge function)
+
+#### Scheduling Options:
+**Option A: pg_cron (Recommended)**
+- ✅ Native PostgreSQL scheduling
+- ✅ Runs inside database
+- ✅ No external dependencies
+- ❌ Requires pg_cron extension
+
+**Option B: Edge Function + External Cron**
+- ✅ More flexible scheduling
+- ✅ Better logging and monitoring
+- ❌ Requires external service
+- ❌ More complex setup
+
+#### Success Criteria:
+- [ ] expires_at column populated for all images
+- [ ] Cleanup runs automatically every hour
+- [ ] Expired images deleted successfully
+- [ ] Cleanup logs generated correctly
+- [ ] Users see expiry countdown on images
+- [ ] No performance impact from cleanup
+
+---
+
+## 📋 IMPLEMENTATION PRIORITY ORDER
+
+### Phase 1: Critical Generation Features (Week 1)
+1. **Photo Style Selection UI** - Day 1-2
+2. **Gemini 2.5 Flash Integration** - Day 2-3
+3. **Verify Start Training Button** - Day 3
+
+### Phase 2: Gallery Foundation (Week 2)
+4. **Full Gallery on Overview** - Day 4-5
+5. **Multi-Resolution Downloads** - Day 5-7
+
+### Phase 3: Gallery Expansion (Week 3)
+6. **Dedicated Gallery Page** - Day 8-9
+7. **Gallery Link on /generate** - Day 9
+8. **Pending Images Display** - Day 10
+
+### Phase 4: Lifecycle Management (Week 4)
+9. **24-Hour Image Lifecycle** - Day 11-12
 
 ---
 
