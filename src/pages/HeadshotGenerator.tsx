@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { completeSupabaseService } from '@/services/supabase-complete';
 import { supabase } from '@/integrations/supabase/client';
 import { filesToBase64 } from '@/utils/file-utils';
-import { ArrowLeft, Crown, Coins, Gallery } from 'lucide-react';
+import { ArrowLeft, Crown, Coins, Images } from 'lucide-react';
 
 type GenerationStep = 'upload' | 'training' | 'generating' | 'completed';
 
@@ -390,7 +390,7 @@ const HeadshotGenerator = () => {
               onClick={() => navigate('/gallery')}
               disabled={isProcessing}
             >
-              <Gallery className="w-4 h-4 mr-2" />
+              <Images className="w-4 h-4 mr-2" />
               Gallery
             </Button>
             
