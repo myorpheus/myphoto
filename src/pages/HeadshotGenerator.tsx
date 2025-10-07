@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import { PhotoUpload } from '@/components/PhotoUpload';
+import PhotoStyleSelector from '@/components/PhotoStyleSelector';
+import GenerationOptions from '@/components/GenerationOptions';
 import { HeadshotGallery } from '@/components/HeadshotGallery';
 import { GenerationProgress } from '@/components/GenerationProgress';
 import { useToast } from '@/hooks/use-toast';
@@ -623,81 +622,15 @@ const HeadshotGenerator = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Photo Style Selection */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">Choose Your Photo Style</h3>
-                  <RadioGroup 
-                    value={selectedStyle} 
-                    onValueChange={setSelectedStyle}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-4"
-                  >
-                    <div className="flex items-center space-x-2 p-4 border rounded-lg cursor-pointer hover:bg-accent">
-                      <RadioGroupItem value="professional" id="professional" />
-                      <Label htmlFor="professional" className="cursor-pointer flex-1">
-                        <div>
-                          <div className="font-medium">Professional/Corporate</div>
-                          <div className="text-sm text-muted-foreground">Full face frontal headshot, perfect for LinkedIn and business</div>
-                        </div>
-                      </Label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2 p-4 border rounded-lg cursor-pointer hover:bg-accent">
-                      <RadioGroupItem value="doctor" id="doctor" />
-                      <Label htmlFor="doctor" className="cursor-pointer flex-1">
-                        <div>
-                          <div className="font-medium">Doctor/Medical</div>
-                          <div className="text-sm text-muted-foreground">Professional medical headshot, ideal for healthcare professionals</div>
-                        </div>
-                      </Label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2 p-4 border rounded-lg cursor-pointer hover:bg-accent">
-                      <RadioGroupItem value="boudoir" id="boudoir" />
-                      <Label htmlFor="boudoir" className="cursor-pointer flex-1">
-                        <div>
-                          <div className="font-medium">Boudoir/Artistic</div>
-                          <div className="text-sm text-muted-foreground">Mid-body artistic shot with tasteful styling</div>
-                        </div>
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                  
-                  {/* Gender Selection for Boudoir */}
-                  {selectedStyle === 'boudoir' && (
-                    <div className="mt-4 p-4 bg-muted/50 rounded-lg">
-                      <h4 className="font-medium mb-2">Select Gender for Styling</h4>
-                      <RadioGroup 
-                        value={selectedGender} 
-                        onValueChange={setSelectedGender}
-                        className="flex gap-4"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="man" id="man" />
-                          <Label htmlFor="man">Man (shirtless styling)</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="woman" id="woman" />
-                          <Label htmlFor="woman">Woman (elegant lingerie)</Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                  )}
-                </div>
+                <PhotoStyleSelector
+                  selectedStyle={selectedStyle}
+                  setSelectedStyle={setSelectedStyle}
+                  selectedGender={selectedGender}
+                  setSelectedGender={setSelectedGender}
+                />
 
                 {/* Generation Info */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">1 Credit</Badge>
-                    <span className="text-sm">Per generation</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">4 Headshots</Badge>
-                    <span className="text-sm">Different angles</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">High Quality</Badge>
-                    <span className="text-sm">Professional results</span>
-                  </div>
-                </div>
+                <GenerationOptions />
               </CardContent>
             </Card>
           </div>

@@ -136,6 +136,108 @@
 
 ---
 
+## 🔧 PHASE 2 - CODE REFACTORING & MAINTAINABILITY
+
+**Objective:** Improve codebase maintainability, readability, and testability by refactoring large modules (>200 lines) into smaller, focused components.
+
+**Status:** 8 critical modules identified for refactoring
+**Priority:** HIGH - Technical debt reduction
+
+### General Refactoring Guidelines:
+- **Component-Based Architecture:** Break down large modules into smaller, reusable components
+- **Separation of Concerns:** Separate UI components from business logic
+- **Hooks for Logic:** Extract reusable logic into custom hooks
+- **Services for API Interactions:** Create dedicated services for API calls
+- **Type Safety:** Leverage TypeScript for improved reliability
+- **Unit Testing:** Write tests for extracted components and services
+
+### Refactoring Action Items:
+
+#### 🔴 CRITICAL (>500 lines)
+
+##### 1. TrainModel.tsx (793 lines → ~4 components <200 lines each)
+- [ ] **Extract TrainModelForm.tsx**: Input fields, model configuration
+- [ ] **Extract TrainingProgress.tsx**: Progress display component
+- [ ] **Extract TrainingResults.tsx**: Results display component
+- [ ] **Create useTrainModelData.ts hook**: State management
+- [ ] **Create trainModelService.ts**: API interaction service
+- [ ] **Update main TrainModel.tsx**: Orchestrator component only
+
+##### 2. HeadshotGenerator.tsx (711 lines → target: <300 lines)
+- [ ] **Extract ImagePreview.tsx**: Image display component
+- [ ] **Extract UploadButton.tsx**: File upload handling
+- [ ] **Create headshotGeneratorService.ts**: API service
+- [ ] **Create useHeadshotGeneration.ts hook**: Generation state management
+- ✅ **Extracted PhotoStyleSelector.tsx component** (67 lines)
+- ✅ **Extracted GenerationOptions.tsx component** (25 lines)
+- ✅ **Updated HeadshotGenerator.tsx to use extracted components**
+- **PROGRESS**: Reduced from 711 lines to 644 lines (67 lines saved)
+- **NEXT STEPS**:
+  - [ ] Extract debugging/configuration logic (testConfiguration function)
+  - [ ] Extract state management into custom hook
+  - [ ] Target: Get HeadshotGenerator.tsx under 300 lines total
+
+##### 3. AdminDashboard.tsx (675 lines → ~3 components <200 lines each)
+- [ ] **Extract UserManagement.tsx**: User CRUD operations
+- [ ] **Extract Settings.tsx**: Application settings
+- [ ] **Extract Analytics.tsx**: Dashboard analytics
+- [ ] **Create userService.ts**: User API calls
+- [ ] **Create settingsService.ts**: Settings API calls
+- [ ] **Create analyticsService.ts**: Analytics API calls
+
+##### 4. sidebar.tsx (637 lines → ~4 components <200 lines each)
+- [ ] **Extract Navigation.tsx**: Navigation links
+- [ ] **Extract UserProfile.tsx**: Profile display
+- [ ] **Extract ThemeToggle.tsx**: Theme switching
+- [ ] **Extract AuthStatus.tsx**: Authentication status
+- [ ] **Create NavItem.tsx**: Individual nav item component
+
+##### 5. generate-headshot/index.ts (526 lines → ~3 handlers <200 lines each)
+- [ ] **Extract trainModelHandler.ts**: Training logic
+- [ ] **Extract generateImageHandler.ts**: Image generation logic
+- [ ] **Extract statusCheckHandler.ts**: Status checking logic
+- [ ] **Create astriaApiService.ts**: Astria API interactions
+- [ ] **Update main index.ts**: Route dispatcher only
+
+##### 6. supabase-complete.ts (512 lines → ~4 services <150 lines each)
+- [ ] **Extract userService.ts**: User operations
+- [ ] **Extract modelService.ts**: Model operations  
+- [ ] **Extract imageService.ts**: Image operations
+- [ ] **Extract creditService.ts**: Credit management
+- [ ] **Update main service**: Service coordinator
+
+#### 🟡 HIGH PRIORITY (>400 lines)
+
+##### 7. Login.tsx (464 lines → ~3 components <200 lines each)
+- [ ] **Extract LoginForm.tsx**: Login form component
+- [ ] **Extract SignupForm.tsx**: Registration form
+- [ ] **Extract AuthProviders.tsx**: OAuth providers
+- [ ] **Create useAuth.ts hook**: Authentication logic
+- [ ] **Create authService.ts**: Auth API calls
+
+##### 8. Gallery.tsx (460 lines → ~3 components <200 lines each)
+- [ ] **Extract ImageGrid.tsx**: Image display grid
+- [ ] **Extract FilterBar.tsx**: Filtering controls
+- [ ] **Extract ImageModal.tsx**: Full-size image viewer
+- [ ] **Create useImageFiltering.ts hook**: Filter state management
+- [ ] **Create galleryService.ts**: Gallery API calls
+
+### Refactoring Success Metrics:
+- [ ] All components under 200 lines
+- [ ] Clear separation of concerns
+- [ ] Reusable UI components created
+- [ ] Unit tests written for new components
+- [ ] No functionality regression
+- [ ] Improved code maintainability score
+
+### Testing Requirements:
+- [ ] Unit tests for all extracted components
+- [ ] Integration tests for service layers
+- [ ] End-to-end tests for user workflows
+- [ ] Performance benchmarks maintained
+
+---
+
 ### 🤖 2. Gemini 2.5 Flash "Nano Banana" Integration (CRITICAL - NOT IMPLEMENTED)
 **User Request:** Use Gemini 2.5 Flash for Astria prompt generation
 **Current State:** ❌ NO Gemini integration exists in generate-headshot/index.ts
