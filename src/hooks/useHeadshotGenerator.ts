@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { completeSupabaseService } from '@/services/supabase-complete';
-import { supabase } from '@/integrations/supabase/client';
-import { filesToBase64 } from '@/utils/file-utils';
+import { headshotGeneratorService } from '@/services/headshotGeneratorService';
 
 type GenerationStep = 'upload' | 'training' | 'generating' | 'completed';
 
@@ -41,13 +39,13 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
 
   const loadUserData = async () => {
     try {
-      const user = await completeSupabaseService.getCurrentUser();
+      const user = await headshotGeneratorService.getCurrentUser();
       if (!user) {
         navigate('/login');
         return;
       }
 
-      const credits = await completeSupabaseService.getUserCredits(user.id);
+      const credits = await headshotGeneratorService.getUserCredits(user.id);
       setUserCredits(credits);
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -80,7 +78,7 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
 
     try {
       console.log('🔐 Getting user authentication...');
-      const user = await completeSupabaseService.getCurrentUser();
+      const user = await headshotGeneratorService.getCurrentUser();
       if (!user) {
         console.error('❌ User not authenticated');
         throw new Error('User not authenticated');
@@ -90,120 +88,37 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
       const modelName = `headshots-${Date.now()}`;
       console.log('📝 Model name created:', modelName);
 
-      console.log('🎫 Getting user session...');
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        console.error('❌ Session error:', sessionError);
-        throw new Error(`Authentication error: ${sessionError.message}`);
-      }
-      if (!session) {
-        console.error('❌ No session found');
-        toast({
-          title: 'Authentication Required',
-          description: 'Please log in again to generate headshots.',
-          variant: 'destructive',
-        });
-        navigate('/login');
-        return;
-      }
-      console.log('✅ Session obtained, token length:', session.access_token?.length || 0);
+      console.log('🎫 Getting access token...');
+      const accessToken = await headshotGeneratorService.getAccessToken();
+      console.log('✅ Access token obtained');
 
-      const now = Math.floor(Date.now() / 1000);
-      if (session.expires_at && session.expires_at < now) {
-        console.error('❌ Session expired');
-        toast({
-          title: 'Session Expired',
-          description: 'Your session has expired. Please log in again.',
-          variant: 'destructive',
-        });
-        navigate('/login');
-        return;
-      }
-
-      console.log('🔄 Converting images to base64...');
-      const imageBase64 = await filesToBase64(files);
-      console.log('✅ Images converted, count:', imageBase64.length);
-
-      console.log('📡 Calling generate-headshot edge function...');
-      const response = await fetch(`https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/generate-headshot`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'train_model',
-          name: modelName,
-          images: imageBase64,
-          steps: 500,
-          face_crop: true
-        }),
+      console.log('📡 Training model...');
+      const trainResponse = await headshotGeneratorService.trainModel({
+        images: files,
+        modelName,
+        userId: user.id,
+        accessToken,
       });
 
-      console.log('📡 Edge function response status:', response.status);
-      console.log('📡 Edge function response headers:', Object.fromEntries(response.headers.entries()));
-
-      if (!response.ok) {
-        console.error('❌ Edge function failed with status:', response.status);
-        const errorText = await response.text();
-        console.error('❌ Error response body:', errorText);
-
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch (e) {
-          errorData = { error: errorText };
-        }
-
-        let userMessage = 'Failed to start training';
-        if (response.status === 401) {
-          userMessage = 'Authentication failed. Please log in again.';
-          navigate('/login');
-        } else if (response.status === 402) {
-          userMessage = 'Insufficient credits. Please purchase more credits.';
-        } else if (response.status === 500 && errorData.error?.includes('ASTRIA_API_KEY')) {
-          userMessage = 'Service configuration error. Please contact support.';
-        } else if (response.status === 400) {
-          userMessage = errorData.error || 'Invalid request parameters.';
-        } else {
-          userMessage = errorData.error || `Server error (${response.status}). Please try again.`;
-        }
-
-        toast({
-          title: 'Training Failed',
-          description: userMessage,
-          variant: 'destructive',
-        });
-
-        throw new Error(errorData.error || `HTTP ${response.status}: Failed to start training`);
+      if (!trainResponse.success || !trainResponse.tune_id) {
+        throw new Error(trainResponse.error || 'Training failed');
       }
 
-      console.log('✅ Edge function succeeded, parsing response...');
-      const astriaModel = await response.json();
-      console.log('📊 Astria model response:', astriaModel);
+      console.log('✅ Training started, tune_id:', trainResponse.tune_id);
 
       console.log('💾 Saving model to database...');
-      const dbModel = await completeSupabaseService.createModel({
-        user_id: user.id,
-        astria_model_id: astriaModel.id,
-        name: modelName,
-        status: astriaModel.status
-      });
+      const dbModel = await headshotGeneratorService.createModelRecord(
+        user.id,
+        trainResponse.tune_id,
+        modelName
+      );
 
       setCurrentModel(dbModel);
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        await completeSupabaseService.createSample({
-          user_id: user.id,
-          model_id: dbModel.id,
-          file_name: file.name,
-          file_path: `samples/${user.id}/${dbModel.id}/${file.name}`,
-          file_size: file.size
-        });
-      }
+      console.log('💾 Saving sample records...');
+      await headshotGeneratorService.createSampleRecords(files, user.id, dbModel.id);
 
-      await pollModelTraining(astriaModel.id, dbModel.id);
+      await pollModelTraining(trainResponse.tune_id, dbModel.id);
 
     } catch (error) {
       console.error('❌ COMPLETE ERROR DETAILS:');
@@ -227,35 +142,19 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
 
     const checkStatus = async (): Promise<void> => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) throw new Error('User not authenticated');
+        const accessToken = await headshotGeneratorService.getAccessToken();
+        const statusResponse = await headshotGeneratorService.checkModelStatus(astriaModelId, accessToken);
 
-        const response = await fetch(`https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/generate-headshot`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'check_status',
-            tune_id: astriaModelId
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to check model status');
+        if (!statusResponse.success) {
+          throw new Error(statusResponse.error || 'Failed to check model status');
         }
 
-        const statusResponse = await response.json();
-        const astriaModel = statusResponse.status;
+        const status = statusResponse.status || 'unknown';
+        await headshotGeneratorService.updateModelStatus(dbModelId, status);
 
-        await completeSupabaseService.updateModel(dbModelId, {
-          status: astriaModel.status
-        });
-
-        if (astriaModel.status === 'trained') {
+        if (status === 'trained') {
           await generateHeadshots(dbModelId);
-        } else if (astriaModel.status === 'failed') {
+        } else if (status === 'failed') {
           throw new Error('Model training failed');
         } else if (attempts < maxAttempts) {
           attempts++;
@@ -278,7 +177,7 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
 
     const checkImages = async (): Promise<string[]> => {
       try {
-        const images = await completeSupabaseService.getModelImages(dbModelId);
+        const images = await headshotGeneratorService.getModelImages(dbModelId);
 
         const completedImages = images.filter(img => img.url && img.status === 'completed');
         const generatingImages = images.filter(img => img.status === 'generating');
@@ -313,40 +212,29 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
     setCurrentStep('generating');
 
     try {
-      const user = await completeSupabaseService.getCurrentUser();
+      const user = await headshotGeneratorService.getCurrentUser();
       if (!user) throw new Error('User not authenticated');
 
       const prompt = 'professional headshot, business attire, clean background, high quality, studio lighting, corporate portrait';
+      const accessToken = await headshotGeneratorService.getAccessToken();
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('User not authenticated');
+      const model = await headshotGeneratorService.getModelImages(dbModelId);
+      const tuneId = model[0]?.model_id || 0;
 
-      const response = await fetch(`https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/generate-headshot`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'generate_image',
-          model_id: dbModelId,
-          prompt: prompt,
-          style: selectedStyle,
-          gender: selectedGender,
-          num_images: 4,
-          steps: 50,
-          cfg_scale: 7
-        }),
+      const generateResponse = await headshotGeneratorService.generateImage({
+        tuneId,
+        prompt,
+        style: selectedStyle,
+        gender: selectedGender,
+        numImages: 4,
+        accessToken,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate images');
+      if (!generateResponse.success) {
+        throw new Error(generateResponse.error || 'Failed to generate images');
       }
 
-      await response.json();
       console.log('Generation started, polling for completion...');
-
       const generatedImages = await pollImageCompletion(dbModelId);
 
       setGeneratedImages(generatedImages);
@@ -375,16 +263,7 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
 
   const handleDownload = async (imageUrl: string) => {
     try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `headshot-${Date.now()}.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      await headshotGeneratorService.downloadImage(imageUrl, `headshot-${Date.now()}.jpg`);
     } catch (error) {
       toast({
         title: 'Download Failed',
