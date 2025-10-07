@@ -231,19 +231,22 @@
   - [ ] Optional: Extract auth diagnostics into separate utility
   - [ ] Write unit tests for Login flow
 
-##### 8. Gallery.tsx (460 lines → ~3 components <200 lines each) - **NEXT PRIORITY**
-- [ ] **Extract ImageGrid.tsx**: Image display grid component
-- [ ] **Extract FilterBar.tsx**: Filtering and sorting controls
-- [ ] **Extract ImageModal.tsx**: Full-size image viewer
-- [ ] **Create useGalleryData.ts hook**: State management and filtering logic
-- [ ] **Create galleryService.ts**: Gallery API calls and image operations
-- [ ] **Update Gallery.tsx**: Orchestrator component only
-- **STATUS**: Requires refactoring - 460 lines exceeds target
+##### 8. Gallery.tsx (460 lines → ~3 components <200 lines each) - **IN PROGRESS**
+- ✅ **Created useGalleryData.ts hook**: State management and filtering logic (210 lines)
+  * 9 useState hooks (images, loading, filters, search, sort, view mode, expiries)
+  * 3 useEffect hooks (data loading, filtering/sorting, expiry monitoring)
+  * 3 handler functions (loadGalleryData, downloadWithResolution, handleExtendImageLife)
+  * Full TypeScript interfaces and type safety
+- [ ] **Extract FilterBar.tsx**: Filtering and sorting controls (lines 259-301)
+- [ ] **Extract ImageGrid.tsx**: Image display grid component (lines 303-420)
+- [ ] **Update Gallery.tsx**: Integrate hook and orchestrator only
+- **STATUS**: Hook complete, components extraction next - 460 lines → target <150
+- **NEXT ACTIONABLE STEP**: Extract FilterBar.tsx component (search, status filter, sort controls)
 - **NEXT STEPS**:
-  - [ ] Extract filtering controls (lines 230-318)
-  - [ ] Extract image grid display (lines 320-450)
-  - [ ] Create state management hook
-  - [ ] Write unit tests for extracted components
+  - [ ] Extract FilterBar component (lines 259-301)
+  - [ ] Extract ImageGrid component (lines 303-420)
+  - [ ] Update Gallery.tsx to use hook
+  - [ ] Write unit tests for hook and components
 
 ### Refactoring Success Metrics:
 - [ ] All components under 200 lines
