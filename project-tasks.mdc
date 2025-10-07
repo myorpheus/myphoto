@@ -12,7 +12,7 @@
 | Feature | Status | Files Affected | Priority |
 |---------|--------|---------------|----------|
 | Photo Style Selection UI | ✅ IMPLEMENTED | PhotoStyleSelector.tsx, generateImageHandler.ts | COMPLETE |
-| Gemini 2.5 Flash Prompt Gen | ❌ NOT IMPLEMENTED | generate-headshot/index.ts | CRITICAL |
+| Gemini 2.5 Flash Prompt Gen | ✅ IMPLEMENTED | geminiPromptEnhancer.ts, generateImageHandler.ts, GEMINI_SETUP.md | COMPLETE |
 | Start Training Button | ⚠️ DEBUG ONLY | TrainModel.tsx | HIGH |
 | Model Sync Button | ✅ IMPLEMENTED | TrainModel.tsx (lines 708-741) | COMPLETE |
 | Show Update Dates | ✅ IMPLEMENTED | TrainModel.tsx | COMPLETE |
