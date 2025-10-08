@@ -12,6 +12,33 @@
 - `src/hooks/useHeadshotGenerator.ts` (lines 221-226)
 - `src/services/headshotGeneratorService.ts` (lines 183-188)
 
+## 🚨 FIXED: Internal Server Error in trainModelHandler (2025-10-08)
+
+**Error**: Internal server error in trainModelHandler
+**Symptom**: Photos won't generate - training fails before images can be created
+
+**Root Cause**: Model names containing underscores rejected by Astria API
+**Astria Rule**: Only English letters, numbers, and spaces allowed in model names
+
+**Fixes Applied**:
+1. headshotGeneratorService.ts:82 - Changed underscore replacement to special character removal
+2. trainModelHandler.ts:49 - Changed underscore separator to space in timestamp
+
+**Files Modified**:
+- `src/services/headshotGeneratorService.ts` (line 81-82)
+- `supabase/functions/generate-headshot/trainModelHandler.ts` (line 47-49)
+
+**Deployment**:
+- Frontend: Rebuilt (dist/assets/index-B21eVNwg.js)
+- Edge Function: v41 deployed to Supabase
+
+**Testing Required**:
+- [ ] Upload 4-10 photos
+- [ ] Click Generate Headshots
+- [ ] Verify no 'Internal server error'
+- [ ] Confirm training starts successfully
+- [ ] Verify images generate after training
+
 ## 🚨 HIGH PRIORITY: Headshot Generation Button Debugging Checklist
 
 **I. Initial Checks & Configuration Verification**
