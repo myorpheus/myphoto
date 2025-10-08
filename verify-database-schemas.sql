@@ -114,16 +114,21 @@ SELECT
     ELSE '✗ NOT ENABLED'
   END AS pg_cron_extension;
 
--- Check scheduled job
-SELECT
-  jobname,
-  schedule,
-  command,
-  active
-FROM cron.job
-WHERE jobname = 'cleanup-expired-images';
-
--- If no rows returned, job doesn't exist
+-- Check scheduled job (only if pg_cron is enabled)
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_extension WHERE extname = 'pg_cron') THEN
+    RAISE NOTICE 'Checking cron jobs...';
+    PERFORM * FROM cron.job WHERE jobname = 'cleanup-expired-images';
+    IF NOT FOUND THEN
+      RAISE NOTICE '✗ Cron job "cleanup-expired-images" does not exist';
+    ELSE
+      RAISE NOTICE '✓ Cron job "cleanup-expired-images" exists';
+    END IF;
+  ELSE
+    RAISE NOTICE '✗ pg_cron extension not enabled - cannot check for scheduled jobs';
+  END IF;
+END $$;
 
 -- ============================================================
 -- STEP 5: CHECK CUSTOM PROMPT (Migration 20251008000000)
@@ -202,7 +207,7 @@ WITH checks AS (
   UNION ALL
   SELECT 6, NOT EXISTS (SELECT FROM pg_proc WHERE proname = 'cleanup_expired_images'), 'cleanup_expired_images function'
   UNION ALL
-  SELECT 7, NOT EXISTS (SELECT FROM cron.job WHERE jobname = 'cleanup-expired-images'), 'cleanup cron job'
+  SELECT 7, NOT EXISTS (SELECT FROM pg_extension WHERE extname = 'pg_cron'), 'pg_cron extension'
   UNION ALL
   SELECT 8, NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'profiles' AND column_name = 'custom_astria_prompt'), 'custom_astria_prompt column'
   UNION ALL
