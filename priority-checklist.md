@@ -1,5 +1,104 @@
 # Priority Checklist
 
+## 🚨 CRITICAL P0: Generate-Headshot Edge Function NOT DEPLOYED (2025-10-08)
+
+**ERROR**: generate-headshot Edge Function does not exist on Supabase
+**ROOT CAUSE**: Function exists in local codebase but was never deployed to production
+**IMPACT**: ALL headshot generation completely broken - 500 errors on all requests
+**TIME TO FIX**: 10-15 minutes
+**STATUS**: ⚠️ IMMEDIATE DEPLOYMENT REQUIRED
+
+### Files to Deploy:
+- `supabase/functions/generate-headshot/index.ts` (entry point)
+- `supabase/functions/generate-headshot/trainModelHandler.ts`
+- `supabase/functions/generate-headshot/generateImageHandler.ts`
+- `supabase/functions/generate-headshot/statusCheckHandler.ts`
+- `supabase/functions/generate-headshot/geminiPromptEnhancer.ts`
+- `supabase/functions/generate-headshot/utils.ts`
+
+### Dependencies Required:
+- `@supabase/supabase-js@2.39.3`
+- Deno standard library (HTTP server)
+
+### Environment Variables Required:
+- `ASTRIA_API_KEY` - Astria AI authentication
+- `SUPABASE_URL` - Your Supabase project URL
+- `SUPABASE_SERVICE_ROLE_KEY` - Admin database access
+- `GEMINI_API_KEY` - Google Gemini prompt enhancement (optional)
+
+### [P0] IMMEDIATE DEPLOYMENT STEPS:
+
+#### Prerequisites Check:
+- [ ] Verify Supabase CLI installed: `supabase --version`
+- [ ] Login to Supabase: `supabase login`
+- [ ] Link to project: `supabase link --project-id imzlzufdujhcbebibgpj`
+
+#### Deploy Function:
+- [ ] Navigate to project root: `cd /Users/dimaglinskii/Documents/GitHub/myphoto`
+- [ ] Deploy function: `supabase functions deploy generate-headshot`
+- [ ] Wait for deployment confirmation message
+- [ ] Note the deployed version number
+
+#### Set Environment Variables:
+- [ ] Set ASTRIA_API_KEY: `supabase secrets set ASTRIA_API_KEY="your_key"`
+- [ ] Set GEMINI_API_KEY: `supabase secrets set GEMINI_API_KEY="your_key"`
+- [ ] Verify secrets: `supabase secrets list`
+
+#### Verify Deployment:
+- [ ] Open Supabase Dashboard → Functions
+- [ ] Confirm `generate-headshot` appears in list
+- [ ] Check status shows "Ready" (not "Failed")
+- [ ] Click function → View logs
+- [ ] Test with curl or web app
+
+#### Test Complete Workflow:
+- [ ] Open web app: https://myphoto.heyphotoai.com
+- [ ] Upload 4-10 training photos
+- [ ] Click "Generate Headshots"
+- [ ] Verify no 500 errors
+- [ ] Confirm images generate successfully
+
+### Post-Deployment Verification:
+
+**Database Permissions:**
+- [ ] Verify service role can INSERT into `models` table
+- [ ] Verify service role can SELECT/UPDATE `credits` table
+- [ ] Verify service role can INSERT into `images` table
+
+**Webhook Configuration:**
+- [ ] Verify `astria-webhook` Edge Function exists
+- [ ] Test webhook URL: `${supabaseUrl}/functions/v1/astria-webhook`
+- [ ] Check webhook logs for incoming events
+
+**CORS & Security:**
+- [ ] Review CORS headers in utils.ts (currently allows all origins)
+- [ ] Consider restricting to production domain only
+- [ ] Verify API keys not exposed in client code
+
+### Quick Deploy Commands (Copy-Paste):
+```bash
+# Navigate to project
+cd /Users/dimaglinskii/Documents/GitHub/myphoto
+
+# Deploy function
+supabase functions deploy generate-headshot
+
+# Set secrets (replace with actual keys)
+supabase secrets set ASTRIA_API_KEY="sd_your_actual_key_here"
+supabase secrets set GEMINI_API_KEY="your_gemini_key_here"
+
+# Verify deployment
+supabase functions list
+supabase secrets list
+```
+
+### Why This Happened:
+- Function code was created locally but never deployed
+- No deployment verification in git workflow
+- This is the root cause of all 500 errors seen today
+
+---
+
 ## 🚨 CRITICAL: Custom Astria Prompt Database Column Missing (2025-10-08)
 
 **Error**: column profiles.custom_astria_prompt does not exist (Error 42703)
@@ -49,15 +148,127 @@
 
 ---
 
-## 🚨 CRITICAL: TrainModelHandler 500 Error (Still Pending Investigation)
+## 🚨 CRITICAL: TrainModelHandler 500 Error (Debugging In Progress)
 
-**Error 2**: Internal server error in trainModelHandler (500)
-**Status**: ⏳ Awaiting user to check Supabase logs
+**Error**: Internal server error in trainModelHandler (500)
+**Impact**: Users cannot train models - blocks entire headshot generation workflow
+**Status**: ⏳ AWAITING SUPABASE LOGS INVESTIGATION
 
-**Action Required**:
-1. Check Supabase Edge Function logs for actual error
-2. Share full error message and stack trace
-3. Apply specific fix based on error details
+### Detailed Debugging Checklist:
+
+#### [P0] CRITICAL - IMMEDIATE INVESTIGATION REQUIRED
+
+**1. Supabase Edge Function Logs Analysis**
+- [ ] Open Supabase Dashboard → Functions → generate-headshot → Logs
+- [ ] Find the most recent 500 error invocation
+- [ ] Copy the complete error message and stack trace
+- [ ] Look for specific error patterns:
+  - [ ] "ASTRIA_API_KEY is not defined" or similar env var errors
+  - [ ] Database connection failures
+  - [ ] JSON parsing errors in request body
+  - [ ] Astria API authentication failures (401/403)
+  - [ ] Image encoding/base64 errors
+
+**2. Environment Variables Verification**
+- [ ] Navigate to Supabase Dashboard → Project Settings → Edge Functions → Secrets
+- [ ] Verify ASTRIA_API_KEY exists and is not empty
+- [ ] Verify key format starts with expected prefix (e.g., "sd_")
+- [ ] Check for typos, extra spaces, or newline characters
+- [ ] Test key directly with Astria API using curl:
+  ```bash
+  curl -H "Authorization: Bearer YOUR_KEY" https://api.astria.ai/tunes
+  ```
+- [ ] Verify edge function can access the secret (add logging if needed)
+
+#### [P1] HIGH PRIORITY - VERIFY DATA FLOW
+
+**3. Database Connectivity & RLS Policies**
+- [ ] Check edge function can connect to Supabase database
+- [ ] Verify RLS policies on `models` table allow INSERT for authenticated users
+- [ ] Verify RLS policies on `credits` table allow SELECT/UPDATE for authenticated users
+- [ ] Test database query directly in Supabase SQL Editor:
+  ```sql
+  SELECT * FROM credits WHERE user_id = 'USER_ID';
+  SELECT * FROM models WHERE user_id = 'USER_ID' ORDER BY created_at DESC LIMIT 5;
+  ```
+- [ ] Check if service role key has proper permissions
+
+**4. Input Parameter Validation**
+- [ ] Verify image data format (base64 with data URL prefix)
+- [ ] Check image count is within 4-20 range
+- [ ] Verify model name contains only letters, numbers, spaces
+- [ ] Check request body structure matches expected format:
+  ```json
+  {
+    "action": "train_model",
+    "name": "ModelName",
+    "images": ["data:image/jpeg;base64,..."],
+    "steps": 500,
+    "face_crop": true
+  }
+  ```
+- [ ] Add console logging to trainModelHandler to inspect incoming parameters
+
+#### [P2] MEDIUM PRIORITY - API INTEGRATION CHECKS
+
+**5. Astria API Request/Response Analysis**
+- [ ] Review Astria API documentation for tune creation endpoint
+- [ ] Verify request body format matches Astria's requirements
+- [ ] Check callback URL is accessible: `${supabaseUrl}/functions/v1/astria-webhook`
+- [ ] Test Astria API directly with sample request
+- [ ] Review Astria API rate limits and quota
+- [ ] Check if account has active subscription/credits
+
+**6. Code Review - trainModelHandler.ts**
+- [ ] Review lines 23-32: Input validation logic
+- [ ] Review lines 35-56: Astria API call structure
+- [ ] Review lines 70-80: Database insert logic
+- [ ] Add try-catch blocks around each major operation
+- [ ] Add detailed logging before/after each API call
+
+### Debugging Steps to Add Logging:
+
+Add these console.log statements to trainModelHandler.ts:
+
+```typescript
+// After line 24
+console.log("🔍 DEBUG - Received parameters:", {
+  name,
+  imageCount: images.length,
+  steps,
+  face_crop
+});
+
+// After line 35
+console.log("🔍 DEBUG - Supabase client initialized");
+
+// Before line 38
+console.log("🔍 DEBUG - Calling Astria API with:", {
+  title: name,
+  name: `${name} ${Date.now()}`,
+  callback: `${supabaseUrl}/functions/v1/astria-webhook`,
+  imageCount: images.length
+});
+
+// After line 67
+console.log("🔍 DEBUG - Astria response:", astriaData);
+
+// Before line 71
+console.log("🔍 DEBUG - Inserting into database:", {
+  user_id: user.id,
+  astria_model_id: astriaData.id,
+  name: name,
+  status: astriaData.status || "training"
+});
+```
+
+### Known Similar Issues from project-tasks.mdc:
+- **2025-10-06**: Database service methods disabled/commented out
+- **2025-10-06**: Missing API key configurations
+- **Pattern**: Frontend/backend parameter mismatches causing 500 errors
+
+### Next Action:
+**USER MUST**: Access Supabase logs and share the complete error message. Without the actual error details, we cannot proceed with a specific fix.
 
 **Documentation**: FIX_DATABASE_AND_DEBUG_GUIDE.md
 
