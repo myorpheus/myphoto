@@ -78,7 +78,8 @@ export class HeadshotGeneratorService {
         action: 'train_model',
         images: base64Images,
         title: modelName,
-        name: modelName.toLowerCase().replace(/\s+/g, '_'),
+        // FIXED: Astria API only allows letters, numbers, and spaces (no underscores)
+        name: modelName.replace(/[^a-zA-Z0-9\s]/g, ''),
         user_id: userId,
       }),
     });

@@ -44,7 +44,9 @@ export async function trainModelHandler(
       body: JSON.stringify({
         tune: {
           title: name,
-          name: `${name}_${Date.now()}`,
+          // FIXED: Astria API only allows letters, numbers, and spaces (no underscores)
+          // Removed underscore, using space instead
+          name: `${name} ${Date.now()}`,
           callback: `${supabaseUrl}/functions/v1/astria-webhook`,
         },
         images: images,
