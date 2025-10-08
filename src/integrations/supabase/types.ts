@@ -394,6 +394,7 @@ export type Database = {
         Row: {
           astria_image_id: number | null
           created_at: string | null
+          expires_at: string | null
           id: number
           model_id: number
           prompt: string | null
@@ -404,6 +405,7 @@ export type Database = {
         Insert: {
           astria_image_id?: number | null
           created_at?: string | null
+          expires_at?: string | null
           id?: number
           model_id: number
           prompt?: string | null
@@ -414,6 +416,7 @@ export type Database = {
         Update: {
           astria_image_id?: number | null
           created_at?: string | null
+          expires_at?: string | null
           id?: number
           model_id?: number
           prompt?: string | null
@@ -1093,6 +1096,10 @@ export type Database = {
       check_user_ticket: {
         Args: { p_event_id: string; p_user_id: string }
         Returns: boolean
+      }
+      cleanup_expired_images: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       delete_expired_stories: {
         Args: Record<PropertyKey, never>
