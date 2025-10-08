@@ -12,6 +12,79 @@
 - `src/hooks/useHeadshotGenerator.ts` (lines 221-226)
 - `src/services/headshotGeneratorService.ts` (lines 183-188)
 
+## 🚨 HIGH PRIORITY: Headshot Generation Button Debugging Checklist
+
+**I. Initial Checks & Configuration Verification**
+
+- [ ] **1. Browser Console Errors:**
+  - [ ] Open browser developer console (Network and Console tabs)
+  - [ ] Click Generate Headshot button
+  - [ ] Check for JavaScript errors, network failures (4xx, 5xx), CORS issues
+  - [ ] Check for JavaScript warnings
+- [ ] **2. Environment Variables (Client-Side):**
+  - [ ] Verify VITE_SUPABASE_URL in .env file
+  - [ ] Verify VITE_ASTRIA_API_KEY in .env file
+- [ ] **3. Supabase Secrets:**
+  - [ ] Confirm ASTRIA_API_KEY is present and correct
+  - [ ] Verify no typos or extra spaces
+- [ ] **4. Edge Function Deployment:**
+  - [ ] Verify generate-headshot function deployed at v39
+  - [ ] Verify astria-webhook function deployed at v38
+  - [ ] Check function logs for errors
+- [ ] **5. User Authentication:**
+  - [ ] Ensure user is authenticated
+  - [ ] Check authentication token is passed to edge function
+- [ ] **6. Credits Balance:**
+  - [ ] Verify user has sufficient Astria API credits
+
+**II. Code Flow Verification**
+
+- [ ] **1. HeadshotGenerator.tsx:**
+  - [ ] Verify button onClick calls handlePhotosSelected
+  - [ ] Check conditional rendering isn't blocking button
+  - [ ] Confirm success message display logic is correct
+- [ ] **2. useHeadshotGenerator.ts:**
+  - [ ] Verify state management for loading, errors, images
+  - [ ] Check response handling (success and error cases)
+  - [ ] Log data being sent to service before API call
+- [ ] **3. headshotGeneratorService.ts:**
+  - [ ] Verify correct data (including custom prompt) sent to edge function
+  - [ ] Check error handling and parsing
+  - [ ] Verify response parsing (image URLs, status)
+- [ ] **4. generate-headshot Edge Function:**
+  - [ ] Verify authentication handling
+  - [ ] Confirm ASTRIA_API_KEY usage from secrets
+  - [ ] Check train_model action calls Astria API correctly
+  - [ ] Check generate_image action calls Astria API correctly
+  - [ ] Verify custom prompt injection into API request
+  - [ ] Add detailed logging for API calls
+- [ ] **5. astria-webhook Edge Function:**
+  - [ ] Verify webhook receives and processes Astria events
+  - [ ] Check status updates in database
+  - [ ] Verify error handling for webhook processing
+
+**III. Testing Steps**
+
+- [ ] **1. Simple Test:**
+  - [ ] Click Generate Headshot with default settings
+  - [ ] Observe console and network requests
+  - [ ] Verify images display
+  - [ ] Verify success message displays
+- [ ] **2. Error Scenario Testing:**
+  - [ ] Test with invalid API key
+  - [ ] Test with insufficient credits
+  - [ ] Test with invalid prompt
+  - [ ] Test with network errors
+
+**IV. Fix Actions**
+
+- [ ] Fix any identified API key issues
+- [ ] Address CORS issues if present
+- [ ] Improve error handling throughout flow
+- [ ] Fix prompt injection if broken
+- [ ] Add comprehensive logging
+- [ ] Ensure module sizes under 300 lines
+
 ## Next Priority: Gallery & Image Management Features
 Based on project-tasks.mdc analysis, the next priorities are:
 
@@ -106,49 +179,3 @@ Based on project-tasks.mdc analysis, the next priorities are:
 - Clear visual feedback for each image's status
 - Reduced perceived wait time with engaging progress display
 - Better transparency into the generation process
-
----
-
-## 🎯 NEXT PRIORITY: Custom Astria Prompt Editing
-**Priority**: MEDIUM - Feature Enhancement & User Customization
-**Status**: PLANNING PHASE
-**Goal**: Allow users to customize Astria API prompts with custom requirements (e.g., "only gemini nano banana to generate the photos")
-
-### Implementation Checklist:
-
-#### 1. Understand Astria API Prompt Structure
-- [ ] **Locate Service Logic**: Identify file making Astria API calls (likely `src/services/astria.ts` or `supabase/functions/generate-headshot/`)
-- [ ] **Analyze Request Body**: Examine how `prompt` field is currently constructed
-- [ ] **Consult API Documentation**: Review Astria API docs for prompt parameter specs (length limits, formatting)
-- [ ] **Determine Injection Point**: Decide strategy for adding custom text (e.g., concatenation: `base_prompt, custom_user_text`)
-
-#### 2. Create UI for Prompt Customization
-- [ ] **Identify UI Component**: Choose location for input field (`GenerationOptions.tsx` or `HeadshotGenerator.tsx`)
-- [ ] **Add Input Field**: Create textarea using existing UI components
-- [ ] **Implement State Management**: Use `useState` to manage custom prompt value
-- [ ] **Add UI Elements**:
-  - [ ] Clear label: "Custom Prompt Details"
-  - [ ] Placeholder text: e.g., "cinematic lighting, wearing a black turtleneck"
-  - [ ] "Save Preference" button for storing custom prompt
-
-#### 3. Integrate Custom Prompts into Generation Requests
-- [ ] **Pass State to Parent**: Propagate custom prompt string to generation trigger component
-- [ ] **Modify Service Call**: Update function signature to accept custom prompt parameter
-- [ ] **Update Backend/Edge Function**:
-  - [ ] Modify Supabase function payload to include custom prompt
-  - [ ] Update edge function logic to receive parameter
-- [ ] **Combine Prompts**: Merge base prompt with custom prompt in backend (proper formatting)
-- [ ] **End-to-End Test**: Verify final prompt sent to Astria includes custom text
-
-#### 4. Store User Preferences
-- [ ] **Update Database Schema**:
-  - [ ] Create migration file in `supabase/migrations/`
-  - [ ] Add `custom_astria_prompt` text column to `profiles` table
-  - [ ] Run migration
-- [ ] **Implement "Save" Functionality**:
-  - [ ] Create function to update user's `custom_astria_prompt` in database
-  - [ ] Hook to "Save Preference" button's onClick event
-- [ ] **Implement "Load" Functionality**:
-  - [ ] Fetch user's `custom_astria_prompt` on page load
-  - [ ] Set initial state of input field with saved preference
-- [ ] **Provide User Feedback**: Toast notification on successful save (use `use-toast` hook)

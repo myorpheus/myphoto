@@ -98,22 +98,26 @@ export async function generateImageHandler(
     };
 
     let enhancedPrompt = prompt;
-    let finalNegativePrompt = "no side profiles, blurry, low quality, distorted features, artificial artifacts";
+
+    // NOTE: Flux models don't support negative prompts, so this code is commented out
+    // If you switch to a non-Flux model, you can uncomment this section
+    // let finalNegativePrompt = "no side profiles, blurry, low quality, distorted features, artificial artifacts";
 
     if (style === 'boudoir') {
       const boudoirConfig = styleConfigs.boudoir[gender as 'man' | 'woman'] || styleConfigs.boudoir.man;
       enhancedPrompt = `${prompt}, ${boudoirConfig.prompt}`;
-      finalNegativePrompt = boudoirConfig.negativePrompt;
+      // finalNegativePrompt = boudoirConfig.negativePrompt;
     } else {
       const styleConfig = styleConfigs[style as 'professional' | 'doctor'] || styleConfigs.professional;
       enhancedPrompt = `${prompt}, ${styleConfig.prompt}`;
-      finalNegativePrompt = styleConfig.negativePrompt;
+      // finalNegativePrompt = styleConfig.negativePrompt;
     }
 
     // Use custom negative prompt if provided, otherwise use style default
-    if (negative_prompt) {
-      finalNegativePrompt = negative_prompt;
-    }
+    // NOTE: Disabled for Flux models
+    // if (negative_prompt) {
+    //   finalNegativePrompt = negative_prompt;
+    // }
 
     // 🎨 CUSTOM PROMPT INJECTION
     // Add user's custom prompt text if provided
@@ -140,9 +144,15 @@ export async function generateImageHandler(
       console.log("ℹ️ Gemini API not configured - using style-based prompts only");
     }
 
-    console.log("🍌 Using nano banana generation model");
-    console.log("🎨 Final prompt:", enhancedPrompt);
-    console.log("🚫 Negative prompt:", finalNegativePrompt);
+    // 🔑 CRITICAL FIX: Add trigger word for Flux models
+    // Flux models require "ohwx {gender}" at the start of the prompt
+    const triggerWord = `ohwx ${gender}`;
+    const finalPrompt = `${triggerWord} ${enhancedPrompt}`;
+
+    console.log("🍌 Using nano banana generation model (Flux)");
+    console.log("🔑 Trigger word:", triggerWord);
+    console.log("🎨 Final prompt:", finalPrompt);
+    console.log("ℹ️ Note: Flux models don't support negative prompts");
 
     // Call Astria API to generate images with nano banana model
     const response = await fetch(`https://api.astria.ai/tunes/${model.astria_model_id}/prompts`, {
@@ -153,15 +163,15 @@ export async function generateImageHandler(
       },
       body: JSON.stringify({
         prompt: {
-          text: enhancedPrompt,
-          negative_prompt: finalNegativePrompt,
+          text: finalPrompt,
+          // REMOVED: negative_prompt not supported on Flux models
           num_images: num_images,
           callback: `${supabaseUrl}/functions/v1/astria-webhook`,
           // Nano banana generation parameters
           w: 768,
           h: 1024,
           steps: 25,
-          cfg_scale: 7,
+          cfg_scale: 3, // FIXED: Changed from 7 to 3 (Flux requires <5)
           seed: -1,
           controlnet: "canny",
           controlnet_conditioning_scale: 0.8,
