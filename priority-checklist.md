@@ -1,31 +1,65 @@
 # Priority Checklist
 
-## 🚨 CRITICAL: Database Schema Error + TrainModelHandler Failure (2025-10-08)
+## 🚨 CRITICAL: Custom Astria Prompt Database Column Missing (2025-10-08)
 
-**Error 1**: column profiles.custom_astria_prompt does not exist (400)
+**Error**: column profiles.custom_astria_prompt does not exist (Error 42703)
+**Impact**: Custom prompt feature completely broken
+**Time to Fix**: 5 minutes
+**Status**: ⏳ IMMEDIATE USER ACTION REQUIRED
+
+### Quick Fix - Run SQL Now:
+**Document**: IMMEDIATE_FIX_CUSTOM_PROMPT_COLUMN.md (step-by-step guide)
+
+### Detailed Checklist:
+
+#### [P0] IMMEDIATE FIX STEPS (Must Do Now)
+- [ ] Open Supabase SQL Editor (https://supabase.com/dashboard/project/imzlzufdujhcbebibgpj)
+- [ ] Click 'New Query'
+- [ ] Copy SQL from IMMEDIATE_FIX_CUSTOM_PROMPT_COLUMN.md
+- [ ] Run the SQL script
+- [ ] Verify success message appears
+
+#### [P0] VERIFICATION STEPS (Confirm It Worked)
+- [ ] Check SQL output shows: custom_astria_prompt | text
+- [ ] Refresh web app at https://myphoto.heyphotoai.com
+- [ ] Check browser console - no more 42703 errors
+- [ ] Navigate to headshot generator page
+- [ ] Verify no database errors appear
+
+#### [P1] TESTING STEPS (Make Sure Everything Works)
+- [ ] Try typing in custom prompt field
+- [ ] Click 'Save as Default' button
+- [ ] Reload the page
+- [ ] Verify saved prompt persists
+- [ ] Try generating headshots with custom prompt
+
+#### [P2] POST-FIX ACTIONS
+- [ ] Monitor application logs for new errors
+- [ ] Document the fix was completed
+- [ ] Update local migration status if needed
+
+### Why This Happened:
+- Migration file exists: supabase/migrations/20251008000000_add_custom_prompt.sql
+- But migration wasn't applied to production database
+- This is a **recurring pattern** (see project-tasks.mdc for similar issues from 2025-10-06)
+
+### Related Issues:
+- 2025-10-06: Complete MYPHOTO Database Migration (similar pattern)
+- Frontend/backend schema mismatches (recurring theme)
+
+---
+
+## 🚨 CRITICAL: TrainModelHandler 500 Error (Still Pending Investigation)
+
 **Error 2**: Internal server error in trainModelHandler (500)
+**Status**: ⏳ Awaiting user to check Supabase logs
 
-**Root Causes**:
-1. Database column not created in production (migration exists but not applied)
-2. TrainModelHandler still failing - needs Supabase logs investigation
+**Action Required**:
+1. Check Supabase Edge Function logs for actual error
+2. Share full error message and stack trace
+3. Apply specific fix based on error details
 
-**Action Required - USER MUST DO**:
-1. Run SQL in Supabase dashboard to add custom_astria_prompt column
-2. Check Supabase Edge Function logs for actual trainModelHandler error
-3. Provide error details for specific fix
-
-**Documentation Created**:
-- FIX_DATABASE_AND_DEBUG_GUIDE.md - Complete fix and debugging guide
-- Includes SQL script, diagnostic tests, and troubleshooting steps
-
-**Checklist**:
-- [ ] Run SQL to add custom_astria_prompt column (see guide)
-- [ ] Verify column created in profiles table
-- [ ] Check Supabase logs for trainModelHandler error details
-- [ ] Run diagnostic tests in browser console
-- [ ] Copy and share full error from Supabase logs
-- [ ] Apply specific fix once error cause identified
-- [ ] Test end-to-end flow
+**Documentation**: FIX_DATABASE_AND_DEBUG_GUIDE.md
 
 ---
 

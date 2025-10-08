@@ -36,15 +36,44 @@
 ---
 
 ### Fix #3: Database Schema - Custom Prompt Column
-**Status**: ⏳ PENDING USER ACTION
+**Status**: ⏳ IMMEDIATE ACTION REQUIRED - 5 Minutes
+**Error Code**: 42703 (PostgreSQL undefined_column)
+**Impact**: Custom prompt feature completely broken
 **Migration File**: supabase/migrations/20251008000000_add_custom_prompt.sql
 
 **Issue**: Column profiles.custom_astria_prompt does not exist
-**Solution**: SQL script provided in FIX_DATABASE_AND_DEBUG_GUIDE.md
+**Error Details**:
+```
+GET /rest/v1/profiles?select=custom_astria_prompt&user_id=eq.xxx
+Status: 400 (Bad Request)
+Error: {code: '42703', message: 'column profiles.custom_astria_prompt does not exist'}
+```
 
-**User Action Required**:
-1. Run SQL in Supabase dashboard to add column
-2. Verify column created successfully
+**Solution Provided**:
+1. Created **IMMEDIATE_FIX_CUSTOM_PROMPT_COLUMN.md** with step-by-step guide
+2. SQL script ready to run in Supabase SQL Editor (takes 5 minutes)
+3. Detailed checklist with priority levels [P0, P1, P2]
+4. Verification and testing steps included
+
+**Recurring Pattern Identified**:
+- Similar to 2025-10-06 Complete MYPHOTO Database Migration
+- Frontend/backend schema mismatches (recurring theme in project)
+- Migration files exist but not applied to production
+- This is the **4th database schema issue** in recent history
+
+**Prevention Recommendations**:
+1. Automate migration checks in deployment pipeline
+2. Add database schema versioning to track changes
+3. Implement column existence checks before use
+4. Better error messages for missing columns
+
+**User Actions Required**:
+- [ ] Open IMMEDIATE_FIX_CUSTOM_PROMPT_COLUMN.md
+- [ ] Follow step-by-step SQL guide (5 minutes)
+- [ ] Run SQL script in Supabase SQL Editor
+- [ ] Verify column created (output shows custom_astria_prompt | text)
+- [ ] Test custom prompt functionality on web app
+- [ ] Confirm error 42703 is resolved in browser console
 
 **Result**: Will enable custom prompt saving/loading functionality
 
