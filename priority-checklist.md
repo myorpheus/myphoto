@@ -1,5 +1,34 @@
 # Priority Checklist
 
+## 🚨 CRITICAL: Database Schema Error + TrainModelHandler Failure (2025-10-08)
+
+**Error 1**: column profiles.custom_astria_prompt does not exist (400)
+**Error 2**: Internal server error in trainModelHandler (500)
+
+**Root Causes**:
+1. Database column not created in production (migration exists but not applied)
+2. TrainModelHandler still failing - needs Supabase logs investigation
+
+**Action Required - USER MUST DO**:
+1. Run SQL in Supabase dashboard to add custom_astria_prompt column
+2. Check Supabase Edge Function logs for actual trainModelHandler error
+3. Provide error details for specific fix
+
+**Documentation Created**:
+- FIX_DATABASE_AND_DEBUG_GUIDE.md - Complete fix and debugging guide
+- Includes SQL script, diagnostic tests, and troubleshooting steps
+
+**Checklist**:
+- [ ] Run SQL to add custom_astria_prompt column (see guide)
+- [ ] Verify column created in profiles table
+- [ ] Check Supabase logs for trainModelHandler error details
+- [ ] Run diagnostic tests in browser console
+- [ ] Copy and share full error from Supabase logs
+- [ ] Apply specific fix once error cause identified
+- [ ] Test end-to-end flow
+
+---
+
 - [x] Use Gemini CLI to analyze tasks
 - [x] Integrate checklist into priority-checklist.md
 - [x] Fix Generate Headshots Button (CRITICAL)
