@@ -131,16 +131,38 @@ supabase secrets list
 - 20251008130000 (duplicate?)
 - 20251008182515 (applied via dashboard)
 
+### ⚡ QUICK START: Run Verification Script First
+
+**BEFORE applying any migrations, run this verification script:**
+
+- [ ] Open Supabase Dashboard → SQL Editor
+- [ ] Copy contents of `verify-database-schemas.sql`
+- [ ] Paste and execute in SQL Editor
+- [ ] Review output to see what's MISSING vs what EXISTS
+- [ ] This will show you exactly which migrations to apply
+
 ### [P0] PHASE 1: Analysis and Reconciliation
 
-#### Task 1.1: Inventory Remote Migrations (P0)
+#### Task 1.1: Run Comprehensive Schema Verification (P0)
+- [ ] Open `verify-database-schemas.sql` in your editor
+- [ ] Copy the entire SQL script
 - [ ] Open Supabase Dashboard → SQL Editor
-- [ ] Execute query:
-  ```sql
-  SELECT version FROM public.schema_migrations ORDER BY version;
-  ```
-- [ ] Save output to `remote_migrations.txt`
-- [ ] Compare with local migrations list
+- [ ] Paste and execute the verification script
+- [ ] Review the output categories:
+  - Migration History
+  - Headshot Tables (models, images, credits, samples)
+  - Image Expiry Feature
+  - Image Cleanup Schedule
+  - Custom Prompt Feature
+  - Role Management (has_role function)
+  - Summary of missing components
+- [ ] Note down all components marked "✗ MISSING"
+- [ ] Pay special attention to CRITICAL missing components
+
+#### Task 1.2: Inventory Remote Migrations (P0)
+- [ ] Check the Migration History section from verification script
+- [ ] Compare version numbers with local migration files
+- [ ] Identify which migrations are truly not applied
 
 #### Task 1.2: Compare Local and Remote (P0)
 - [ ] Use diff tool to identify truly missing migrations

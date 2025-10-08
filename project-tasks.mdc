@@ -203,25 +203,63 @@ supabase functions deploy generate-headshot --project-ref imzlzufdujhcbebibgpj
 
 ---
 
-### Fix #5: SQL Migration Deployment Gap Analysis (CRITICAL)
-**Status**: ⚠️ IDENTIFIED - 17 Local Migrations NOT APPLIED
+### Fix #5: SQL Migration Deployment Gap - Verification Script Created (CRITICAL)
+**Status**: ✅ SOLUTION READY - Verification Script & Application Guide Complete
 **Discovery Date**: 2025-10-08 19:45
-**Analysis Method**: Gemini CLI + Supabase CLI
+**Solution Date**: 2025-10-08 20:15
+**Method**: Gemini CLI analysis + comprehensive verification script
 
 **Root Cause**:
-17 local SQL migrations exist in `supabase/migrations/` but were **never applied to the remote Supabase database**. Migration history has diverged.
+17 local SQL migrations exist but never applied to remote database. Migration history diverged - some tables/columns may have been created manually via dashboard.
 
-**Critical Migrations NOT Applied**:
-1. `20251004081500_create_headshot_tables.sql` - Core tables
-2. `20251007000000_add_image_expiry.sql` - Image expiration
-3. `20251007000001_schedule_image_cleanup.sql` - Cleanup (pg_cron)
-4. `20251008000000_add_custom_prompt.sql` - Custom prompt column
-5. `20251006141946_promote_all_users_to_super_admin.sql` - Admin permissions
-6. `20251006150000_enable_train_model_feature.sql` - Model training
+**Critical Components Potentially Missing**:
+1. Headshot tables (models, images, credits, samples) + RLS policies
+2. Image expiry column + cleanup function + cron job
+3. Custom prompt column + constraints + index
+4. has_role function (CRITICAL - required by RLS policies)
+5. handle_new_user function + trigger
 
-**Solution**: See priority-checklist.md lines 102-296 for complete resolution guide
+**Solution Created** (All via Gemini CLI):
 
-**Documentation**: deployment-gap-analysis.txt, priority-checklist.md
+✅ **Comprehensive Verification Script** (`verify-database-schemas.sql`):
+- 7 verification categories with 200+ lines
+- Checks migration history, tables, columns, indexes, functions, triggers, cron jobs
+- Clear ✓ EXISTS / ✗ MISSING status for each component
+- Summary section showing count and list of missing components
+- **MUST RUN THIS FIRST** before applying any migrations
+
+✅ **Safe Application Strategy**:
+1. Run verification script to identify what's actually missing
+2. Only apply SQL for missing components (avoid duplicate errors)
+3. Record applied migrations in schema_migrations table
+4. Verify each component post-application
+
+✅ **Detailed Application Checklist** (via Gemini CLI):
+- Step-by-step guide with exact CLI commands
+- Pre-migration checks for each migration
+- Post-migration verification queries
+- Rollback plan for failures
+- Integrated into priority-checklist.md (lines 134-296)
+
+**Key Insight**:
+Many components may already exist (created via dashboard). Verification script prevents errors by showing exactly what's missing vs. what exists.
+
+**Files Created**:
+- `verify-database-schemas.sql` - Comprehensive verification (200+ lines)
+- Updated `priority-checklist.md` - Quick Start + detailed guide
+- Gemini CLI analysis documents
+
+**Next Steps** (USER ACTION):
+1. ⚠️ Run verify-database-schemas.sql in Supabase SQL Editor
+2. ⚠️ Review output - note all "✗ MISSING" components
+3. ⚠️ Apply SQL only for missing components
+4. ⚠️ Verify each component after application
+5. ⚠️ Test complete headshot workflow
+
+**Documentation**:
+- verify-database-schemas.sql - Main verification script
+- priority-checklist.md (lines 134-296) - Complete guide
+- deployment-gap-analysis.txt - Original gap analysis
 
 ---
 
