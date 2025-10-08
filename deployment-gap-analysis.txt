@@ -1,0 +1,120 @@
+DEPLOYMENT GAP ANALYSIS - 2025-10-08
+
+===============================
+EDGE FUNCTIONS ANALYSIS
+===============================
+
+LOCAL FUNCTIONS (4 total):
+1. astria-webhook
+2. generate-headshot
+3. image-lifecycle
+4. scheduled-cleanup
+
+DEPLOYED FUNCTIONS (17 total):
+1. check-admin (v10)
+2. create-checkout (v21)
+3. stripe-webhook (v21)
+4. deepsearch-events (v19)
+5. user-recommendations (v18)
+6. create-subscription-checkout (v17)
+7. stripe-subscription-webhook (v17)
+8. create-bitcoin-subscription (v16)
+9. create-customer-portal-session (v15)
+10. enhanced-stripe-webhook (v15)
+11. deepseek-recommendations (v14)
+12. admin-chat (v9)
+13. deepseek-chat (v5)
+14. astria-webhook (v47) ✓
+15. generate-headshot (v51) ✓ - JUST DEPLOYED
+16. image-lifecycle (v37) ✓
+17. scheduled-cleanup (v37) ✓
+
+EDGE FUNCTIONS STATUS:
+✅ ALL 4 local functions are deployed
+✅ No deployment gaps for Edge Functions
+
+===============================
+SQL MIGRATIONS ANALYSIS
+===============================
+
+CRITICAL ISSUE: 17 LOCAL MIGRATIONS NOT APPLIED TO REMOTE DATABASE
+
+Local-only migrations (NOT on remote):
+1. 20231010160942_remote_schema.sql
+2. 20251003131006_820b5636-a592-4ce0-9c57-1fab3f01b2d6.sql
+3. 20251003131257_ba497e4d-5062-4581-bf1c-47a93d1e72a7.sql
+4. 20251003134416_8a9ad10e-f69e-4346-9bf7-cfc6dbb975d0.sql
+5. 20251003134725_a193cb19-9284-4119-804d-7e1c6c99ec08.sql
+6. 20251004081500_create_headshot_tables.sql ⚠️ CRITICAL - Headshot tables!
+7. 20251006092016_5b5e7377-c464-4e56-89b7-d12bfd165437.sql
+8. 20251006112438_12864fb5-1464-406a-a8e3-98d3a4428ebe.sql
+9. 20251006141946_promote_all_users_to_super_admin.sql
+10. 20251006150000_enable_train_model_feature.sql
+11. 20251006175016_b8eccd4e-18e1-4f2c-ac39-2477dbc91bd6.sql
+12. 20251006213549_8d3d5fda-21be-40a2-b5c4-bfed214128ab.sql
+13. 20251007000000_add_image_expiry.sql ⚠️ CRITICAL - Image lifecycle!
+14. 20251007000001_schedule_image_cleanup.sql ⚠️ CRITICAL - Cleanup job!
+15. 20251008000000_add_custom_prompt.sql ⚠️ CRITICAL - Custom prompt feature!
+16. 20251008130000_add_custom_prompt_column.sql (duplicate of above)
+17. 20251008182515_425780e6-7ea7-4bb5-959e-5b4cab413736.sql (applied via dashboard)
+
+Remote-only migrations (deployed but not in local repo):
+1. 20250605012618
+2. 20250605013803
+3. 20250606014715
+4. 20250606022733
+5. 20250613084905
+6. 20250614091731
+7. 20250615084944
+8. 20250615094627
+9. 20250616030757
+10. 20250620032048
+11. 20250620110908
+12. 20250621082808
+13. 20251002034318
+14. 20251003011005
+15. 20251003011256
+16. 20251003014415
+17. 20251003014724
+18. 20251004094654
+19. 20251006055014
+20. 20251006092015
+21. 20251006093547
+22. 20251006112437
+23. 20251008062514
+
+MIGRATION STATUS:
+❌ 17 local migrations not applied remotely
+⚠️ 23 remote migrations not in local repository
+🚨 CRITICAL DATABASE SYNC ISSUE - Migration history diverged
+
+===============================
+CRITICAL MIGRATIONS NOT APPLIED
+===============================
+
+1. create_headshot_tables.sql - Core headshot functionality tables
+2. add_image_expiry.sql - Image expiration feature
+3. schedule_image_cleanup.sql - Automated cleanup
+4. add_custom_prompt.sql - Custom prompt column
+5. promote_all_users_to_super_admin.sql - Admin permissions
+6. enable_train_model_feature.sql - Model training feature
+
+These missing migrations may cause:
+- Missing database tables
+- Missing columns (custom_astria_prompt error already seen)
+- Missing database functions
+- Missing RLS policies
+- Missing scheduled jobs (pg_cron)
+
+===============================
+RECOMMENDED ACTION
+===============================
+
+CANNOT use "supabase db push" due to migration history mismatch
+Must apply migrations individually via Supabase Dashboard SQL Editor
+
+Next Steps:
+1. Review each local migration file
+2. Determine which are already applied via dashboard (different timestamp)
+3. Apply missing migrations manually via SQL Editor
+4. Sync local migration history with remote

@@ -203,6 +203,48 @@ supabase functions deploy generate-headshot --project-ref imzlzufdujhcbebibgpj
 
 ---
 
+### Fix #5: SQL Migration Deployment Gap Analysis (CRITICAL)
+**Status**: ⚠️ IDENTIFIED - 17 Local Migrations NOT APPLIED
+**Discovery Date**: 2025-10-08 19:45
+**Analysis Method**: Gemini CLI + Supabase CLI
+
+**Root Cause**:
+17 local SQL migrations exist in `supabase/migrations/` but were **never applied to the remote Supabase database**. Migration history has diverged.
+
+**Critical Migrations NOT Applied**:
+1. `20251004081500_create_headshot_tables.sql` - Core tables
+2. `20251007000000_add_image_expiry.sql` - Image expiration
+3. `20251007000001_schedule_image_cleanup.sql` - Cleanup (pg_cron)
+4. `20251008000000_add_custom_prompt.sql` - Custom prompt column
+5. `20251006141946_promote_all_users_to_super_admin.sql` - Admin permissions
+6. `20251006150000_enable_train_model_feature.sql` - Model training
+
+**Solution**: See priority-checklist.md lines 102-296 for complete resolution guide
+
+**Documentation**: deployment-gap-analysis.txt, priority-checklist.md
+
+---
+
+### Fix #6: Module Size Compliance Verification
+**Status**: ✅ 98% COMPLIANT - 1 Module Needs Refactoring
+**Verification Date**: 2025-10-08 19:50
+
+**Findings**:
+- ✅ All 9 Edge Functions under 300 lines
+- ⚠️ useHeadshotGenerator.ts: 373 lines (exceeds by 73)
+- ✅ All other custom modules compliant
+
+**Refactoring Plan**: Split useHeadshotGenerator.ts into 4 focused hooks:
+1. useHeadshotUser.ts (~80 lines) - Auth & credits
+2. useHeadshotTraining.ts (~90 lines) - Training logic
+3. useHeadshotImageGeneration.ts (~90 lines) - Generation logic
+4. useHeadshotUI.ts (~50 lines) - UI state
+5. useHeadshotGenerator.ts (~60 lines) - Orchestration
+
+**Documentation**: module-size-analysis.txt
+
+---
+
 ### Documentation Created:
 1. GENERATE_HEADSHOT_FIX_SUMMARY.md - Flux model compatibility fixes
 2. TRAINMODEL_ERROR_FIX_SUMMARY.md - Model name validation fix

@@ -99,6 +99,203 @@ supabase secrets list
 
 ---
 
+## 🚨 CRITICAL P0: SQL Migrations NOT APPLIED (2025-10-08)
+
+**ERROR**: 17 local SQL migrations never applied to remote Supabase database
+**ROOT CAUSE**: Migration history diverged - migrations created locally but applied via dashboard with different timestamps
+**IMPACT**: Missing database tables, columns, functions, RLS policies, and scheduled jobs
+**TIME TO FIX**: 30-60 minutes (careful manual application required)
+**STATUS**: ⚠️ IMMEDIATE DATABASE SYNC REQUIRED
+
+### Critical Migrations NOT Applied:
+
+**CRITICAL MISSING SCHEMAS**:
+1. `20251004081500_create_headshot_tables.sql` - Core headshot functionality tables
+2. `20251007000000_add_image_expiry.sql` - Image expiration feature
+3. `20251007000001_schedule_image_cleanup.sql` - Automated cleanup (pg_cron job)
+4. `20251008000000_add_custom_prompt.sql` - Custom prompt column
+5. `20251006141946_promote_all_users_to_super_admin.sql` - Admin permissions
+6. `20251006150000_enable_train_model_feature.sql` - Model training feature
+
+**17 Total Local Migrations Not Applied**:
+- 20231010160942_remote_schema.sql
+- 20251003131006, 20251003131257, 20251003134416, 20251003134725
+- 20251004081500 ⚠️ CRITICAL
+- 20251006092016, 20251006112438
+- 20251006141946 ⚠️ CRITICAL
+- 20251006150000 ⚠️ CRITICAL
+- 20251006175016, 20251006213549
+- 20251007000000 ⚠️ CRITICAL
+- 20251007000001 ⚠️ CRITICAL
+- 20251008000000 ⚠️ CRITICAL
+- 20251008130000 (duplicate?)
+- 20251008182515 (applied via dashboard)
+
+### [P0] PHASE 1: Analysis and Reconciliation
+
+#### Task 1.1: Inventory Remote Migrations (P0)
+- [ ] Open Supabase Dashboard → SQL Editor
+- [ ] Execute query:
+  ```sql
+  SELECT version FROM public.schema_migrations ORDER BY version;
+  ```
+- [ ] Save output to `remote_migrations.txt`
+- [ ] Compare with local migrations list
+
+#### Task 1.2: Compare Local and Remote (P0)
+- [ ] Use diff tool to identify truly missing migrations
+- [ ] Create `missing_migrations.txt` list
+- [ ] Create `potential_duplicates.txt` list (different timestamps, same functionality)
+- [ ] Focus on CRITICAL migrations first
+
+#### Task 1.3: Investigate Potential Duplicates (P0)
+- [ ] Review SQL code of each potential duplicate
+- [ ] Check if functionality already exists with different timestamp
+- [ ] Example: `20251008130000_add_custom_prompt_column.sql` vs `20251008000000_add_custom_prompt.sql`
+- [ ] Document findings: "Migration X implemented as Migration Y"
+
+### [P0] PHASE 2: Migration Application
+
+#### Task 2.1: Backup Remote Database (P0) - CRITICAL
+- [ ] **MUST DO FIRST**: Create full database backup via Supabase Dashboard
+- [ ] Navigate to: Settings → Database → Backups → Create Backup
+- [ ] Wait for backup completion confirmation
+- [ ] **DO NOT PROCEED without backup**
+
+#### Task 2.2: Apply Critical Migrations First (P0)
+Apply in this exact order via Supabase Dashboard SQL Editor:
+
+- [ ] **1. create_headshot_tables.sql**
+  - [ ] Open file: `supabase/migrations/20251004081500_create_headshot_tables.sql`
+  - [ ] Copy SQL content
+  - [ ] Paste into Supabase SQL Editor
+  - [ ] Execute
+  - [ ] Verify: Check tables exist (models, images, samples, credits)
+  - [ ] Record migration:
+    ```sql
+    INSERT INTO public.schema_migrations (version) VALUES ('20251004081500');
+    ```
+
+- [ ] **2. add_image_expiry.sql**
+  - [ ] Open file: `supabase/migrations/20251007000000_add_image_expiry.sql`
+  - [ ] Copy SQL content
+  - [ ] Execute in SQL Editor
+  - [ ] Verify: Check `images.expires_at` column exists
+  - [ ] Record migration:
+    ```sql
+    INSERT INTO public.schema_migrations (version) VALUES ('20251007000000');
+    ```
+
+- [ ] **3. schedule_image_cleanup.sql**
+  - [ ] Open file: `supabase/migrations/20251007000001_schedule_image_cleanup.sql`
+  - [ ] Execute in SQL Editor
+  - [ ] Verify: Check pg_cron job exists
+    ```sql
+    SELECT * FROM cron.job WHERE jobname = 'cleanup-expired-images';
+    ```
+  - [ ] Record migration
+
+- [ ] **4. add_custom_prompt.sql**
+  - [ ] Open file: `supabase/migrations/20251008000000_add_custom_prompt.sql`
+  - [ ] Execute in SQL Editor
+  - [ ] Verify: Check `profiles.custom_astria_prompt` column exists
+  - [ ] Record migration
+
+- [ ] **5. promote_all_users_to_super_admin.sql**
+  - [ ] Open file and review carefully
+  - [ ] Execute in SQL Editor
+  - [ ] Verify: Check user roles updated
+
+- [ ] **6. enable_train_model_feature.sql**
+  - [ ] Open file and review carefully
+  - [ ] Execute in SQL Editor
+  - [ ] Verify: Check feature enabled
+
+#### Task 2.3: Apply Remaining Migrations (P1)
+- [ ] Apply remaining non-critical migrations in timestamp order
+- [ ] Use same process: Open → Copy → Execute → Verify → Record
+- [ ] Check logs after each migration
+
+### [P0/P1] PHASE 3: Verification
+
+#### Task 3.1: Verify Migration Application (P0)
+After EACH migration:
+- [ ] Check migration recorded:
+  ```sql
+  SELECT version FROM public.schema_migrations WHERE version = 'YOUR_TIMESTAMP';
+  ```
+- [ ] Check Supabase Dashboard logs for errors
+- [ ] If errors: STOP, restore from backup, fix script, retry
+
+#### Task 3.2: Verify Critical Schema Changes (P0)
+- [ ] **Headshot Tables**: Check tables exist
+  ```sql
+  SELECT table_name FROM information_schema.tables
+  WHERE table_schema = 'public' AND table_name IN ('models', 'images', 'samples', 'credits');
+  ```
+- [ ] **Image Expiry**: Check column exists
+  ```sql
+  SELECT column_name FROM information_schema.columns
+  WHERE table_name = 'images' AND column_name = 'expires_at';
+  ```
+- [ ] **Cleanup Job**: Check pg_cron job
+  ```sql
+  SELECT * FROM cron.job;
+  ```
+- [ ] **Custom Prompt**: Check column exists
+  ```sql
+  SELECT column_name FROM information_schema.columns
+  WHERE table_name = 'profiles' AND column_name = 'custom_astria_prompt';
+  ```
+
+#### Task 3.3: Test Functionality (P0)
+- [ ] Test headshot generation workflow
+- [ ] Test image expiry feature
+- [ ] Test custom prompt saving
+- [ ] Test admin permissions
+- [ ] Check all API endpoints working
+
+### [P2] PHASE 4: Prevention and Synchronization
+
+#### Task 4.1: Download Remote Migrations (P2)
+- [ ] Create placeholder files for 23 remote-only migrations
+- [ ] Name with remote timestamp (e.g., `20250605012618.sql`)
+- [ ] Add comment: "Applied remotely via dashboard"
+- [ ] This syncs local history with remote
+
+#### Task 4.2: Establish Migration Workflow (P2)
+- [ ] **ALWAYS use Supabase CLI for migrations**
+- [ ] NEVER apply via dashboard (except emergencies)
+- [ ] Document emergency dashboard applications
+- [ ] Add migration deployment to CI/CD pipeline
+- [ ] Create MIGRATION_GUIDE.md with best practices
+
+#### Task 4.3: Regular Audits (P2)
+- [ ] Weekly: Run `supabase migration list --linked`
+- [ ] Check for discrepancies
+- [ ] Document any manual applications
+- [ ] Keep deployment-gap-analysis.txt updated
+
+### Quick Migration Status Check:
+```bash
+# Check migration sync status
+supabase migration list --linked
+
+# Expected output: All local migrations should have Remote timestamps
+```
+
+### Why This Happened:
+- Migrations created locally but applied via Supabase Dashboard with different timestamps
+- No automated deployment verification
+- Manual dashboard usage bypassed migration tracking
+- This is a RECURRING pattern (see project-tasks.mdc)
+
+### Documentation:
+- deployment-gap-analysis.txt - Complete gap analysis
+- See Fix #3 in project-tasks.mdc for custom_astria_prompt column issue
+
+---
+
 ## 🚨 CRITICAL: Custom Astria Prompt Database Column Missing (2025-10-08)
 
 **Error**: column profiles.custom_astria_prompt does not exist (Error 42703)
