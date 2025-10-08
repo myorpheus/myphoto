@@ -5,12 +5,20 @@ import { headshotGeneratorService } from '@/services/headshotGeneratorService';
 
 type GenerationStep = 'upload' | 'training' | 'generating' | 'completed';
 
+export interface GeneratedImage {
+  id: number;
+  url: string;
+  status: 'completed' | 'generating' | 'failed';
+  created_at?: string;
+}
+
 interface UseHeadshotGeneratorReturn {
   currentStep: GenerationStep;
   userCredits: number;
   selectedFiles: File[];
   currentModel: any;
   generatedImages: string[];
+  allGeneratedImages: GeneratedImage[];
   isProcessing: boolean;
   selectedStyle: string;
   selectedGender: string;
@@ -27,6 +35,7 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [currentModel, setCurrentModel] = useState<any>(null);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+  const [allGeneratedImages, setAllGeneratedImages] = useState<GeneratedImage[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState<string>('professional');
   const [selectedGender, setSelectedGender] = useState<string>('man');
@@ -183,6 +192,15 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
         const generatingImages = images.filter(img => img.status === 'generating');
         const failedImages = images.filter(img => img.status === 'failed');
 
+        // Update allGeneratedImages state with current status of all images
+        const formattedImages: GeneratedImage[] = images.map(img => ({
+          id: img.id,
+          url: img.url || '',
+          status: img.status as 'completed' | 'generating' | 'failed',
+          created_at: img.created_at
+        }));
+        setAllGeneratedImages(formattedImages);
+
         console.log(`Image status check: ${completedImages.length} completed, ${generatingImages.length} generating, ${failedImages.length} failed`);
 
         if (completedImages.length >= 3) {
@@ -218,8 +236,12 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
       const prompt = 'professional headshot, business attire, clean background, high quality, studio lighting, corporate portrait';
       const accessToken = await headshotGeneratorService.getAccessToken();
 
-      const model = await headshotGeneratorService.getModelImages(dbModelId);
-      const tuneId = model[0]?.model_id || 0;
+      // Get the model details to retrieve the astria_model_id (tuneId)
+      const modelDetails = await headshotGeneratorService.getModel(dbModelId);
+      if (!modelDetails?.astria_model_id) {
+        throw new Error('Model training not completed - missing Astria model ID');
+      }
+      const tuneId = modelDetails.astria_model_id;
 
       const generateResponse = await headshotGeneratorService.generateImage({
         tuneId,
@@ -278,6 +300,7 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
     setSelectedFiles([]);
     setCurrentModel(null);
     setGeneratedImages([]);
+    setAllGeneratedImages([]);
     setIsProcessing(false);
   };
 
@@ -287,6 +310,7 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
     selectedFiles,
     currentModel,
     generatedImages,
+    allGeneratedImages,
     isProcessing,
     selectedStyle,
     selectedGender,

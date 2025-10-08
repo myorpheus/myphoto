@@ -6,6 +6,7 @@ import PhotoStyleSelector from '@/components/PhotoStyleSelector';
 import GenerationOptions from '@/components/GenerationOptions';
 import { HeadshotGallery } from '@/components/HeadshotGallery';
 import { GenerationProgress } from '@/components/GenerationProgress';
+import { PendingImageGrid } from '@/components/PendingImageGrid';
 import { useToast } from '@/hooks/use-toast';
 import { useHeadshotGenerator } from '@/hooks/useHeadshotGenerator';
 import { testConfiguration } from '@/utils/headshotDebug';
@@ -21,6 +22,7 @@ const HeadshotGenerator = () => {
     selectedStyle,
     selectedGender,
     generatedImages,
+    allGeneratedImages,
     setSelectedStyle,
     setSelectedGender,
     handlePhotosSelected,
@@ -43,10 +45,15 @@ const HeadshotGenerator = () => {
       
       case 'generating':
         return (
-          <GenerationProgress 
-            status="Generating professional headshots..."
-            description="Creating high-quality headshots with different styles and backgrounds."
-          />
+          <div className="space-y-6">
+            <GenerationProgress
+              status="Generating professional headshots..."
+              description="Watch your images appear as they're generated!"
+            />
+            {allGeneratedImages.length > 0 && (
+              <PendingImageGrid images={allGeneratedImages} expectedCount={4} />
+            )}
+          </div>
         );
       
       case 'completed':

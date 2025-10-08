@@ -181,6 +181,13 @@ export class HeadshotGeneratorService {
   }
 
   /**
+   * Get model details by ID
+   */
+  async getModel(modelId: number) {
+    return completeSupabaseService.getModel(modelId);
+  }
+
+  /**
    * Get images associated with a model
    */
   async getModelImages(modelId: number) {
