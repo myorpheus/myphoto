@@ -29,6 +29,7 @@ interface CheckStatusResponse {
 interface GenerateImageParams {
   tuneId: number;
   prompt: string;
+  customPrompt?: string;
   style?: string;
   gender?: string;
   numImages?: number;
@@ -154,7 +155,7 @@ export class HeadshotGeneratorService {
    * Generate headshot images using a trained model
    */
   async generateImage(params: GenerateImageParams): Promise<GenerateImageResponse> {
-    const { tuneId, prompt, style, gender, numImages = 4, accessToken } = params;
+    const { tuneId, prompt, customPrompt, style, gender, numImages = 4, accessToken } = params;
 
     const response = await fetch(this.edgeFunctionUrl, {
       method: 'POST',
@@ -166,6 +167,7 @@ export class HeadshotGeneratorService {
         action: 'generate_image',
         tune_id: tuneId,
         prompt,
+        custom_prompt: customPrompt,
         style,
         gender,
         num_images: numImages,
@@ -227,6 +229,51 @@ export class HeadshotGeneratorService {
    */
   async getUserCredits(userId: string) {
     return completeSupabaseService.getUserCredits(userId);
+  }
+
+  /**
+   * Save custom Astria prompt for user
+   */
+  async saveCustomPrompt(userId: string, customPrompt: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ custom_astria_prompt: customPrompt })
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error saving custom prompt:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Exception saving custom prompt:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get user's saved custom Astria prompt
+   */
+  async getCustomPrompt(userId: string): Promise<string | null> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('custom_astria_prompt')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching custom prompt:', error);
+        return null;
+      }
+
+      return data?.custom_astria_prompt || null;
+    } catch (error) {
+      console.error('Exception fetching custom prompt:', error);
+      return null;
+    }
   }
 
   /**

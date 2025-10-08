@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import PhotoStyleSelector from '@/components/PhotoStyleSelector';
 import GenerationOptions from '@/components/GenerationOptions';
@@ -10,7 +12,7 @@ import { PendingImageGrid } from '@/components/PendingImageGrid';
 import { useToast } from '@/hooks/use-toast';
 import { useHeadshotGenerator } from '@/hooks/useHeadshotGenerator';
 import { testConfiguration } from '@/utils/headshotDebug';
-import { ArrowLeft, Crown, Coins, Images } from 'lucide-react';
+import { ArrowLeft, Crown, Coins, Images, Save } from 'lucide-react';
 
 const HeadshotGenerator = () => {
   const navigate = useNavigate();
@@ -21,13 +23,16 @@ const HeadshotGenerator = () => {
     isProcessing,
     selectedStyle,
     selectedGender,
+    customPrompt,
     generatedImages,
     allGeneratedImages,
     setSelectedStyle,
     setSelectedGender,
+    setCustomPrompt,
     handlePhotosSelected,
     handleDownload,
     handleStartNew,
+    handleSaveCustomPrompt,
   } = useHeadshotGenerator();
 
   const renderCurrentStep = () => {
@@ -142,6 +147,36 @@ const HeadshotGenerator = () => {
                   selectedGender={selectedGender}
                   setSelectedGender={setSelectedGender}
                 />
+
+                {/* Custom Prompt Input */}
+                <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="customPrompt" className="text-base font-semibold">
+                      Custom Prompt (Optional)
+                    </Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSaveCustomPrompt}
+                      className="gap-2"
+                    >
+                      <Save className="h-4 w-4" />
+                      Save as Default
+                    </Button>
+                  </div>
+                  <Textarea
+                    id="customPrompt"
+                    placeholder="e.g., cinematic lighting, wearing a black turtleneck, golden hour, only gemini nano banana"
+                    value={customPrompt}
+                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    rows={3}
+                    className="resize-none"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Add custom details to enhance your headshot generation.
+                    This text will be added to your selected style prompt.
+                  </p>
+                </div>
 
                 {/* Generation Info */}
                 <GenerationOptions />

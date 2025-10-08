@@ -106,3 +106,49 @@ Based on project-tasks.mdc analysis, the next priorities are:
 - Clear visual feedback for each image's status
 - Reduced perceived wait time with engaging progress display
 - Better transparency into the generation process
+
+---
+
+## 🎯 NEXT PRIORITY: Custom Astria Prompt Editing
+**Priority**: MEDIUM - Feature Enhancement & User Customization
+**Status**: PLANNING PHASE
+**Goal**: Allow users to customize Astria API prompts with custom requirements (e.g., "only gemini nano banana to generate the photos")
+
+### Implementation Checklist:
+
+#### 1. Understand Astria API Prompt Structure
+- [ ] **Locate Service Logic**: Identify file making Astria API calls (likely `src/services/astria.ts` or `supabase/functions/generate-headshot/`)
+- [ ] **Analyze Request Body**: Examine how `prompt` field is currently constructed
+- [ ] **Consult API Documentation**: Review Astria API docs for prompt parameter specs (length limits, formatting)
+- [ ] **Determine Injection Point**: Decide strategy for adding custom text (e.g., concatenation: `base_prompt, custom_user_text`)
+
+#### 2. Create UI for Prompt Customization
+- [ ] **Identify UI Component**: Choose location for input field (`GenerationOptions.tsx` or `HeadshotGenerator.tsx`)
+- [ ] **Add Input Field**: Create textarea using existing UI components
+- [ ] **Implement State Management**: Use `useState` to manage custom prompt value
+- [ ] **Add UI Elements**:
+  - [ ] Clear label: "Custom Prompt Details"
+  - [ ] Placeholder text: e.g., "cinematic lighting, wearing a black turtleneck"
+  - [ ] "Save Preference" button for storing custom prompt
+
+#### 3. Integrate Custom Prompts into Generation Requests
+- [ ] **Pass State to Parent**: Propagate custom prompt string to generation trigger component
+- [ ] **Modify Service Call**: Update function signature to accept custom prompt parameter
+- [ ] **Update Backend/Edge Function**:
+  - [ ] Modify Supabase function payload to include custom prompt
+  - [ ] Update edge function logic to receive parameter
+- [ ] **Combine Prompts**: Merge base prompt with custom prompt in backend (proper formatting)
+- [ ] **End-to-End Test**: Verify final prompt sent to Astria includes custom text
+
+#### 4. Store User Preferences
+- [ ] **Update Database Schema**:
+  - [ ] Create migration file in `supabase/migrations/`
+  - [ ] Add `custom_astria_prompt` text column to `profiles` table
+  - [ ] Run migration
+- [ ] **Implement "Save" Functionality**:
+  - [ ] Create function to update user's `custom_astria_prompt` in database
+  - [ ] Hook to "Save Preference" button's onClick event
+- [ ] **Implement "Load" Functionality**:
+  - [ ] Fetch user's `custom_astria_prompt` on page load
+  - [ ] Set initial state of input field with saved preference
+- [ ] **Provide User Feedback**: Toast notification on successful save (use `use-toast` hook)

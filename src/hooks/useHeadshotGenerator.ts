@@ -22,11 +22,14 @@ interface UseHeadshotGeneratorReturn {
   isProcessing: boolean;
   selectedStyle: string;
   selectedGender: string;
+  customPrompt: string;
   setSelectedStyle: (style: string) => void;
   setSelectedGender: (gender: string) => void;
+  setCustomPrompt: (prompt: string) => void;
   handlePhotosSelected: (files: File[]) => Promise<void>;
   handleDownload: (imageUrl: string) => Promise<void>;
   handleStartNew: () => void;
+  handleSaveCustomPrompt: () => Promise<void>;
 }
 
 export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
@@ -39,6 +42,7 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState<string>('professional');
   const [selectedGender, setSelectedGender] = useState<string>('man');
+  const [customPrompt, setCustomPrompt] = useState<string>('');
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -56,6 +60,12 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
 
       const credits = await headshotGeneratorService.getUserCredits(user.id);
       setUserCredits(credits);
+
+      // Load saved custom prompt
+      const savedPrompt = await headshotGeneratorService.getCustomPrompt(user.id);
+      if (savedPrompt) {
+        setCustomPrompt(savedPrompt);
+      }
     } catch (error) {
       console.error('Error loading user data:', error);
       toast({
@@ -246,6 +256,7 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
       const generateResponse = await headshotGeneratorService.generateImage({
         tuneId,
         prompt,
+        customPrompt: customPrompt || undefined,
         style: selectedStyle,
         gender: selectedGender,
         numImages: 4,
@@ -304,6 +315,42 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
     setIsProcessing(false);
   };
 
+  const handleSaveCustomPrompt = async () => {
+    try {
+      const user = await headshotGeneratorService.getCurrentUser();
+      if (!user) {
+        toast({
+          title: 'Error',
+          description: 'You must be logged in to save custom prompts',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const success = await headshotGeneratorService.saveCustomPrompt(user.id, customPrompt);
+
+      if (success) {
+        toast({
+          title: 'Custom Prompt Saved',
+          description: 'Your custom prompt has been saved and will be used for future generations',
+        });
+      } else {
+        toast({
+          title: 'Save Failed',
+          description: 'Failed to save custom prompt. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error saving custom prompt:', error);
+      toast({
+        title: 'Error',
+        description: 'An error occurred while saving your custom prompt',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return {
     currentStep,
     userCredits,
@@ -314,10 +361,13 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
     isProcessing,
     selectedStyle,
     selectedGender,
+    customPrompt,
     setSelectedStyle,
     setSelectedGender,
+    setCustomPrompt,
     handlePhotosSelected,
     handleDownload,
     handleStartNew,
+    handleSaveCustomPrompt,
   };
 };

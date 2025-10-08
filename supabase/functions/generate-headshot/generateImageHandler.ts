@@ -5,6 +5,7 @@ import { enhancePromptWithGemini, isGeminiAvailable } from "./geminiPromptEnhanc
 interface GenerateImageParams {
   model_id: string;
   prompt: string;
+  custom_prompt?: string;
   num_images?: number;
   style?: string;
   gender?: string;
@@ -24,7 +25,7 @@ export async function generateImageHandler(
   astriaApiKey: string,
 ): Promise<Response> {
   try {
-    const { model_id, prompt, num_images = 4, style = 'professional', gender = 'man', negative_prompt } = await req.json() as GenerateImageParams;
+    const { model_id, prompt, custom_prompt, num_images = 4, style = 'professional', gender = 'man', negative_prompt } = await req.json() as GenerateImageParams;
 
     if (!model_id || !prompt) {
       return new Response(
@@ -112,6 +113,13 @@ export async function generateImageHandler(
     // Use custom negative prompt if provided, otherwise use style default
     if (negative_prompt) {
       finalNegativePrompt = negative_prompt;
+    }
+
+    // 🎨 CUSTOM PROMPT INJECTION
+    // Add user's custom prompt text if provided
+    if (custom_prompt && custom_prompt.trim()) {
+      enhancedPrompt = `${enhancedPrompt}, ${custom_prompt.trim()}`;
+      console.log("🎨 Custom prompt added:", custom_prompt);
     }
 
     // 🤖 GEMINI 2.5 FLASH ENHANCEMENT
