@@ -240,7 +240,7 @@ export class HeadshotGeneratorService {
       const { error } = await supabase
         .from('profiles')
         .update({ custom_astria_prompt: customPrompt })
-        .eq('user_id', userId);
+        .eq('id', userId);
 
       if (error) {
         console.error('Error saving custom prompt:', error);
@@ -262,7 +262,7 @@ export class HeadshotGeneratorService {
       const { data, error } = await supabase
         .from('profiles')
         .select('custom_astria_prompt')
-        .eq('user_id', userId)
+        .eq('id', userId)
         .single();
 
       if (error) {

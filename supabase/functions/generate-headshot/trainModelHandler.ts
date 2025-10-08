@@ -10,7 +10,7 @@ interface TrainModelParams {
 
 interface User {
   id: string;
-  email: string;
+  email?: string;
 }
 
 export async function trainModelHandler(

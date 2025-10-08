@@ -711,6 +711,7 @@ export type Database = {
           appsource: string
           bio: string | null
           created_at: string | null
+          custom_astria_prompt: string | null
           display_name: string | null
           email_preferences: Json | null
           id: string
@@ -731,6 +732,7 @@ export type Database = {
           appsource?: string
           bio?: string | null
           created_at?: string | null
+          custom_astria_prompt?: string | null
           display_name?: string | null
           email_preferences?: Json | null
           id: string
@@ -751,6 +753,7 @@ export type Database = {
           appsource?: string
           bio?: string | null
           created_at?: string | null
+          custom_astria_prompt?: string | null
           display_name?: string | null
           email_preferences?: Json | null
           id?: string

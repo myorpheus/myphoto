@@ -18,7 +18,8 @@ interface ImageExpiry {
   timeLeftMinutes: number;
   timeLeftText: string;
   isExpired: boolean;
-  expiryDate: Date;
+  expiresAt: Date;
+  timeLeftMs: number;
 }
 
 interface ImageGridProps {

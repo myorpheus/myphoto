@@ -20,7 +20,8 @@ interface ImageExpiry {
   timeLeftMinutes: number;
   timeLeftText: string;
   isExpired: boolean;
-  expiryDate: Date;
+  expiresAt: Date;
+  timeLeftMs: number;
 }
 
 interface UseGalleryDataResult {
@@ -69,11 +70,14 @@ export const useGalleryData = (): UseGalleryDataResult => {
 
       const userImages = await completeSupabaseService.getUserImages(user.id);
       
-      const pending = userImages.filter((img: GalleryImage) => 
+      // Cast to GalleryImage type
+      const typedImages = userImages as unknown as GalleryImage[];
+      
+      const pending = typedImages.filter((img) => 
         img.status === 'generating' || img.status === 'pending'
       );
       
-      setImages(userImages);
+      setImages(typedImages);
       setPendingImages(pending);
     } catch (error) {
       console.error('Error loading gallery:', error);
@@ -118,21 +122,33 @@ export const useGalleryData = (): UseGalleryDataResult => {
 
   // Monitor image expiries
   useEffect(() => {
-    const completedImages = images.filter((img: GalleryImage) => img.status === 'completed');
+    const completedImages = images.filter((img) => img.status === 'completed');
     const expiries: Record<string, ImageExpiry> = {};
 
-    completedImages.forEach((img: GalleryImage) => {
+    completedImages.forEach((img) => {
       const expiry = calculateTimeLeft(img.created_at);
-      expiries[img.id] = expiry;
+      expiries[img.id] = {
+        ...expiry,
+        expiresAt: expiry.expiresAt
+      };
     });
 
     setImageExpiries(expiries);
 
-    const cleanup = imageLifecycleMonitor(completedImages, (updatedExpiries) => {
+    // Poll for expiry updates every 30 seconds
+    const pollInterval = setInterval(() => {
+      const updatedExpiries: Record<string, ImageExpiry> = {};
+      completedImages.forEach((img) => {
+        const expiry = calculateTimeLeft(img.created_at);
+        updatedExpiries[img.id] = {
+          ...expiry,
+          expiresAt: expiry.expiresAt
+        };
+      });
       setImageExpiries(updatedExpiries);
-    });
+    }, 30000);
 
-    return cleanup;
+    return () => clearInterval(pollInterval);
   }, [images]);
 
   // Download with resolution

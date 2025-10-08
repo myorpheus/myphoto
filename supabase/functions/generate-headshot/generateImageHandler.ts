@@ -14,7 +14,7 @@ interface GenerateImageParams {
 
 interface User {
   id: string;
-  email: string;
+  email?: string;
 }
 
 export async function generateImageHandler(
