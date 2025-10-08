@@ -810,6 +810,21 @@ export type Database = {
           },
         ]
       }
+      schema_migrations: {
+        Row: {
+          applied_at: string | null
+          version: string
+        }
+        Insert: {
+          applied_at?: string | null
+          version: string
+        }
+        Update: {
+          applied_at?: string | null
+          version?: string
+        }
+        Relationships: []
+      }
       stories: {
         Row: {
           content: string
