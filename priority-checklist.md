@@ -160,14 +160,53 @@ console.log("🔍 Astria response:", astriaData);
 
 ---
 
-## 🚨 CRITICAL P0.2: Astria API 422 Error - DEPLOYED BUT STILL FAILING (2025-10-09)
+## 🚨 CRITICAL P0.2: Astria API 422 Error - DEBUGGING IN PROGRESS (2025-10-09)
 
 **ERROR**: Astria API returns 422 - "Failed to start model training"
-**STATUS**: 🔴 FIX DEPLOYED (index-DzN9IrE0.js) - ⚠️ STILL RETURNING 422 ERRORS
+**STATUS**: 🔴 DEBUG BUILD DEPLOYED (index-DqcN2hqo.js) - ⚠️ AWAITING LOG ANALYSIS
 **IMPACT**: Model training completely blocked - users cannot create new models
-**PREVIOUS FIX**: fileToBase64 data URL prefix fix DEPLOYED to https://myphoto.heyphotoai.com
-**CURRENT SITUATION**: Error persists after deployment - need deeper investigation
-**TIME TO FIX**: 15-30 minutes (requires Edge Function log analysis)
+**CURRENT BUILD**: index-DqcN2hqo.js with comprehensive logging (DEPLOYED ✅)
+**EDGE FUNCTION**: v61+ with image preview logging (DEPLOYED ✅)
+**NEXT STEP**: Collect and analyze logs to find where images array becomes empty
+**TIME TO FIX**: 15-30 minutes once logs are analyzed
+
+### 🔍 IMMEDIATE ACTION REQUIRED - Collect Debug Logs
+
+**⚠️ CRITICAL: We added extensive logging but need to see the actual output**
+
+#### [P0] GET SUPABASE LOGS (DO THIS FIRST)
+- [ ] Open terminal and run:
+  ```bash
+  supabase functions logs generate-headshot --follow
+  ```
+- [ ] Keep terminal open
+- [ ] Trigger the error in browser (upload photos, click Generate)
+- [ ] Copy ALL terminal output and share it
+- [ ] Look for these specific lines:
+  - `🔍 trainModelHandler: First image preview`
+  - `❌ trainModelHandler: Images array is EMPTY!`
+  - `📋 trainModelHandler: Request parameters received`
+
+#### [P0] GET BROWSER CONSOLE LOGS
+- [ ] Open browser at https://myphoto.heyphotoai.com
+- [ ] Open DevTools (F12) → Console tab
+- [ ] Clear console (trash icon)
+- [ ] Trigger the error (upload photos, click Generate)
+- [ ] Look for these specific lines:
+  - `🔍 trainModel - Images array length:`
+  - `🔍 trainModel - First image preview:`
+  - `🔍 trainModel - Model name:`
+- [ ] Right-click in console → "Save as..." or copy all
+- [ ] Share the output
+
+#### [P0] WHAT TO COMPARE
+Compare the values from both logs:
+
+| Log Source | What to Check | Where Images Get Lost |
+|---|---|---|
+| Browser shows images | Supabase shows empty | Problem in request transit or Edge Function parsing |
+| Browser shows empty | N/A | Problem in frontend file reading |
+| Both show images | Astria returns 422 | Problem in Astria API request format |
 
 ### 🔴 URGENT: Error Still Occurring - Deployment Needed
 
