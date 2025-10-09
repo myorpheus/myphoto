@@ -1,12 +1,145 @@
 # Priority Checklist
 
-## 🚨 CRITICAL P0: Generate-Headshot Edge Function NOT DEPLOYED (2025-10-08)
+## 🚨 CRITICAL P0: TrainModelHandler 500 Error - STILL FAILING (2025-10-08)
+
+**ERROR**: "Internal server error in trainModelHandler" - 500 from generate-headshot
+**STATUS**: ✅ Function deployed (v51) BUT ⚠️ Still returning 500 errors
+**IMPACT**: Users cannot train models - headshot generation completely blocked
+**ROOT CAUSE**: Unknown - Need to check Supabase logs and configuration
+**TIME TO FIX**: 15-30 minutes (depends on root cause)
+
+### ⚡ IMMEDIATE INVESTIGATION REQUIRED
+
+**Most Likely Causes** (based on Gemini CLI analysis):
+1. **ASTRIA_API_KEY not configured or invalid** (MOST LIKELY)
+2. Database connection issues
+3. Invalid request parameters
+4. Astria API authentication failure
+
+### [P0] DEBUGGING CHECKLIST - Do These IN ORDER
+
+#### Step 1: Check Supabase Edge Function Logs (DO THIS FIRST)
+- [ ] Open Supabase Dashboard → Functions → generate-headshot
+- [ ] Click "Logs" tab
+- [ ] Find the most recent 500 error invocation
+- [ ] Look for the actual error message (not just "Internal server error")
+- [ ] Check for these specific errors:
+  - [ ] "ASTRIA_API_KEY is not defined"
+  - [ ] "Failed to create tune" or Astria API error
+  - [ ] "Failed to save model to database"
+  - [ ] Database connection errors
+  - [ ] JSON parsing errors
+
+#### Step 2: Verify Environment Variables (CRITICAL)
+- [ ] Open Supabase Dashboard → Settings → Edge Functions → Secrets
+- [ ] Verify `ASTRIA_API_KEY` exists and is NOT empty
+- [ ] Verify key format: Should start with "sd_" (Stable Diffusion API key)
+- [ ] Check for typos, extra spaces, or newline characters
+- [ ] **Test the API key directly:**
+  ```bash
+  curl -H "Authorization: Bearer YOUR_ASTRIA_KEY" https://api.astria.ai/tunes
+  ```
+- [ ] If curl returns 401/403, API key is invalid
+- [ ] If curl returns list of tunes, API key is valid
+
+#### Step 3: Verify Database Tables Exist
+- [ ] Run `verify-database-schemas.sql` in SQL Editor
+- [ ] Confirm these tables exist:
+  - [ ] `models` table with columns: id, user_id, astria_model_id, name, status
+  - [ ] `credits` table with user credit data
+  - [ ] `images` table for generated images
+- [ ] Verify RLS policies allow INSERT on models table
+- [ ] Check service role has proper permissions
+
+#### Step 4: Check Request Parameters (Client-Side)
+- [ ] Open browser DevTools → Network tab
+- [ ] Click "Generate Headshots" button
+- [ ] Find the POST request to `/functions/v1/generate-headshot`
+- [ ] Check Request Payload contains:
+  - [ ] `action: "train_model"`
+  - [ ] `name`: Valid model name (letters, numbers, spaces only)
+  - [ ] `images`: Array of 4-20 base64 image strings
+  - [ ] Verify images are valid base64 data
+- [ ] Check Response tab for detailed error message
+
+#### Step 5: Test Astria API Integration Manually
+If API key is valid but still failing:
+- [ ] Copy one of the base64 image strings from request
+- [ ] Test Astria API directly with curl:
+  ```bash
+  curl -X POST https://api.astria.ai/tunes \
+    -H "Authorization: Bearer YOUR_ASTRIA_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "tune": {
+        "title": "Test Model",
+        "name": "test 123456",
+        "callback": "https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/astria-webhook"
+      },
+      "images": ["BASE64_IMAGE_DATA_HERE"],
+      "steps": 500,
+      "face_crop": true
+    }'
+  ```
+- [ ] If this fails, note the exact error from Astria
+- [ ] If this succeeds, issue is in Edge Function code
+
+#### Step 6: Add Debug Logging (If cause still unknown)
+Add these console.log statements to trainModelHandler.ts:
+```typescript
+// After line 24
+console.log("🔍 Received params:", { name, imageCount: images.length, steps, face_crop });
+
+// After line 35
+console.log("🔍 Supabase client initialized");
+console.log("🔍 ASTRIA_API_KEY exists:", !!astriaApiKey);
+console.log("🔍 ASTRIA_API_KEY length:", astriaApiKey?.length);
+
+// Before line 38 (API call)
+console.log("🔍 Calling Astria API...");
+
+// After line 67
+console.log("🔍 Astria response:", astriaData);
+```
+- [ ] Deploy updated function: `supabase functions deploy generate-headshot`
+- [ ] Test again and check logs for debug output
+
+### Common Issues & Solutions
+
+**Issue 1: "ASTRIA_API_KEY is not defined"**
+- **Solution**: Set secret via CLI: `supabase secrets set ASTRIA_API_KEY="sd_your_key"`
+
+**Issue 2: Astria API returns 401 Unauthorized**
+- **Solution**: API key is invalid. Get new key from Astria dashboard
+
+**Issue 3: "Failed to save model to database"**
+- **Solution**: Check database table exists and RLS policies allow INSERT
+
+**Issue 4: "only English letters, numbers and spaces allowed"**
+- **Solution**: Model name contains invalid characters (underscores, etc.)
+
+**Issue 5: "Need 4-20 images"**
+- **Solution**: Upload correct number of training images
+
+### What We've Already Done ✅
+- ✅ Deployed generate-headshot function (v51)
+- ✅ All 6 handler files uploaded
+- ✅ Function shows as ACTIVE in dashboard
+- ✅ Reviewed code for obvious issues
+
+### What We Still Need ⚠️
+- ⚠️ Verify ASTRIA_API_KEY is configured
+- ⚠️ Check actual error in Supabase logs
+- ⚠️ Test Astria API key validity
+- ⚠️ Verify database tables exist
+
+---
+
+## 🚨 RESOLVED: Generate-Headshot Edge Function Deployment (2025-10-08)
 
 **ERROR**: generate-headshot Edge Function does not exist on Supabase
-**ROOT CAUSE**: Function exists in local codebase but was never deployed to production
-**IMPACT**: ALL headshot generation completely broken - 500 errors on all requests
-**TIME TO FIX**: 10-15 minutes
-**STATUS**: ⚠️ IMMEDIATE DEPLOYMENT REQUIRED
+**STATUS**: ✅ RESOLVED - Function deployed (v51)
+**DEPLOYED**: 2025-10-08 19:30:10 UTC
 
 ### Files to Deploy:
 - `supabase/functions/generate-headshot/index.ts` (entry point)

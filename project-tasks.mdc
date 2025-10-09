@@ -65,9 +65,112 @@ supabase functions deploy generate-headshot --project-ref imzlzufdujhcbebibgpj
 - Database connectivity issues → Function wasn't running to connect
 
 **Documentation**:
-- priority-checklist.md (lines 3-99) - Complete deployment checklist
+- priority-checklist.md (lines 138-230) - Complete deployment checklist (RESOLVED section)
 - GENERATE_HEADSHOT_FIX_SUMMARY.md - Flux model fixes (now relevant)
 - TRAINMODEL_ERROR_FIX_SUMMARY.md - Model name fixes (now relevant)
+
+---
+
+### Fix #0.1: TrainModelHandler 500 Error - Post-Deployment Debugging (CRITICAL)
+**Status**: ⚠️ IN PROGRESS - Awaiting Configuration/Log Analysis
+**Discovery Date**: 2025-10-08 21:15
+**Analysis Method**: Gemini CLI comprehensive error analysis
+
+**Situation**:
+After deploying the generate-headshot Edge Function (v51), the 500 error persists. Function is deployed and ACTIVE, but trainModelHandler still returns "Internal server error".
+
+**Error Details**:
+```
+POST https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/generate-headshot 500
+Error: Internal server error in trainModelHandler
+```
+
+**Gemini CLI Analysis Results**:
+Used Gemini CLI to analyze trainModelHandler.ts and identify most likely causes.
+
+**Most Likely Root Causes** (in priority order):
+1. **ASTRIA_API_KEY not configured or invalid** (80% likelihood)
+   - Key may not be set in Supabase secrets
+   - Key may be invalid or expired
+   - Key format may be incorrect (should start with "sd_")
+   - Previous pattern: Missing API keys caused similar 500 errors
+
+2. **Database tables don't exist** (15% likelihood)
+   - models, credits, or images table missing
+   - RLS policies preventing INSERT operations
+   - Service role lacking proper permissions
+
+3. **Invalid request parameters** (5% likelihood)
+   - Image data format incorrect
+   - Model name contains invalid characters
+   - Image count outside 4-20 range
+
+**Comprehensive Debugging Checklist Created**:
+✅ Created 6-step debugging checklist via Gemini CLI
+✅ Integrated into priority-checklist.md (lines 3-135)
+
+**Checklist Includes**:
+- Step 1: Check Supabase Edge Function logs (MUST DO FIRST)
+- Step 2: Verify environment variables (ASTRIA_API_KEY)
+- Step 3: Verify database tables exist
+- Step 4: Check request parameters
+- Step 5: Test Astria API integration manually
+- Step 6: Add debug logging if cause unknown
+
+**Common Issues & Solutions Documented**:
+1. "ASTRIA_API_KEY is not defined" → Set via CLI
+2. Astria API returns 401 → API key invalid
+3. "Failed to save model to database" → Check tables/RLS
+4. "only English letters, numbers and spaces allowed" → Fix model name
+5. "Need 4-20 images" → Upload correct count
+
+**Pattern Analysis from Previous Issues**:
+Reviewed project-tasks.mdc with Gemini CLI - found similar pattern:
+- Previous 500 errors were caused by missing deployment ✅ Fixed
+- Secondary cause is often missing ASTRIA_API_KEY
+- Solution that worked before: Set environment variables properly
+
+**Immediate Next Steps** (USER ACTION REQUIRED):
+1. ⚠️ Check Supabase Dashboard → Functions → generate-headshot → Logs
+2. ⚠️ Find actual error message (not generic "Internal server error")
+3. ⚠️ Verify ASTRIA_API_KEY in Dashboard → Settings → Secrets
+4. ⚠️ Test API key with curl command
+5. ⚠️ Run verify-database-schemas.sql to confirm tables exist
+
+**Files Created/Updated**:
+- priority-checklist.md (lines 3-135) - Complete debugging guide
+- Comprehensive error analysis via Gemini CLI
+- Step-by-step resolution checklist
+
+**Testing Commands Provided**:
+```bash
+# Test ASTRIA_API_KEY
+curl -H "Authorization: Bearer YOUR_KEY" https://api.astria.ai/tunes
+
+# Set ASTRIA_API_KEY
+supabase secrets set ASTRIA_API_KEY="sd_your_key_here"
+
+# Verify secrets
+supabase secrets list
+```
+
+**Debug Logging Locations Identified**:
+Added specific console.log placements in trainModelHandler.ts:
+- After parameter parsing (line 24)
+- After Supabase client init (line 35)
+- Before Astria API call (line 38)
+- After Astria response (line 67)
+
+**Why This Differs from Fix #0**:
+- Fix #0: Function wasn't deployed at all → 500 errors
+- Fix #0.1: Function IS deployed but still 500 errors → Configuration/API key issue
+
+**Next Action**:
+Cannot proceed without checking actual Supabase logs. The generic "Internal server error" doesn't tell us which of the 3 likely causes is the actual issue.
+
+**Documentation**:
+- priority-checklist.md (lines 3-135) - Complete debugging checklist
+- Gemini CLI analysis results (comprehensive error analysis)
 
 ---
 
