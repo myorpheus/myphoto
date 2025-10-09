@@ -19,16 +19,41 @@
 ### [P0] DEBUGGING CHECKLIST - Do These IN ORDER
 
 #### Step 1: Check Supabase Edge Function Logs (DO THIS FIRST)
+
+**⚠️ IMPORTANT: Cannot query edge_logs with SQL**
+If you get error "sql parser error: Expected: end of statement, found: edge_logs":
+- This means you're trying to query logs with SQL (NOT possible)
+- edge_logs is NOT a table - it's a concept/feature
+- Must use Dashboard GUI or CLI commands below
+
+**Option A: Dashboard (GUI) - RECOMMENDED**
 - [ ] Open Supabase Dashboard → Functions → generate-headshot
-- [ ] Click "Logs" tab
+- [ ] Click "Logs" tab (NOT SQL Editor)
+- [ ] View logs in the GUI interface
 - [ ] Find the most recent 500 error invocation
 - [ ] Look for the actual error message (not just "Internal server error")
-- [ ] Check for these specific errors:
-  - [ ] "ASTRIA_API_KEY is not defined"
-  - [ ] "Failed to create tune" or Astria API error
-  - [ ] "Failed to save model to database"
-  - [ ] Database connection errors
-  - [ ] JSON parsing errors
+
+**Option B: CLI Commands**
+```bash
+# View logs in terminal
+supabase functions logs generate-headshot
+
+# Follow logs in real-time
+supabase functions logs generate-headshot --follow
+
+# Filter by time range
+supabase functions logs generate-headshot --start "2025-10-08T19:00:00Z"
+
+# Search for errors
+supabase functions logs generate-headshot | grep "error"
+```
+
+**What to look for in logs:**
+- [ ] "ASTRIA_API_KEY is not defined"
+- [ ] "Failed to create tune" or Astria API error
+- [ ] "Failed to save model to database"
+- [ ] Database connection errors
+- [ ] JSON parsing errors
 
 #### Step 2: Verify Environment Variables (CRITICAL)
 - [ ] Open Supabase Dashboard → Settings → Edge Functions → Secrets

@@ -165,12 +165,27 @@ Added specific console.log placements in trainModelHandler.ts:
 - Fix #0: Function wasn't deployed at all → 500 errors
 - Fix #0.1: Function IS deployed but still 500 errors → Configuration/API key issue
 
+**SQL Parser Error Resolution** (via Gemini CLI):
+User encountered: "sql parser error: Expected: end of statement, found: edge_logs at Line: 4, Column: 39"
+
+✅ **Root Cause Identified**: User tried to query edge_logs with SQL (NOT possible)
+✅ **Solution Provided**:
+- edge_logs is NOT a table - it's a logs feature
+- Cannot use SQL SELECT statements on logs
+- Must use Supabase Dashboard → Functions → Logs tab (GUI)
+- Or use CLI: `supabase functions logs generate-headshot`
+
+**Updated Documentation**:
+- Added warning in priority-checklist.md about SQL parser error
+- Provided both Dashboard GUI and CLI methods to view logs
+- CLI commands for filtering, following, and searching logs
+
 **Next Action**:
-Cannot proceed without checking actual Supabase logs. The generic "Internal server error" doesn't tell us which of the 3 likely causes is the actual issue.
+User must now use correct method (Dashboard or CLI) to view actual error logs. Cannot proceed without checking actual Supabase logs. The generic "Internal server error" doesn't tell us which of the 3 likely causes is the actual issue.
 
 **Documentation**:
-- priority-checklist.md (lines 3-135) - Complete debugging checklist
-- Gemini CLI analysis results (comprehensive error analysis)
+- priority-checklist.md (lines 3-135) - Complete debugging checklist + SQL error fix
+- Gemini CLI analysis results (comprehensive error analysis + SQL parser error)
 
 ---
 
