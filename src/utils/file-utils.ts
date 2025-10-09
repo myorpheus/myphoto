@@ -8,21 +8,21 @@
 export const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    
+
     reader.onload = () => {
       if (typeof reader.result === 'string') {
-        // Remove the data URL prefix (data:image/jpeg;base64,)
-        const base64 = reader.result.split(',')[1];
-        resolve(base64);
+        // FIXED: Astria API expects full data URL with prefix (data:image/jpeg;base64,...)
+        // Return the complete data URL, not just the base64 part
+        resolve(reader.result);
       } else {
         reject(new Error('Failed to read file as base64'));
       }
     };
-    
+
     reader.onerror = () => {
       reject(new Error('Error reading file'));
     };
-    
+
     reader.readAsDataURL(file);
   });
 };

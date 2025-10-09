@@ -189,6 +189,88 @@ User must now use correct method (Dashboard or CLI) to view actual error logs. C
 
 ---
 
+### Fix #0.2: Astria API 422 Error - Empty Images Array (CRITICAL)
+**Status**: ⚠️ IN PROGRESS - Awaiting Verification
+**Discovery Date**: 2025-10-09
+**Analysis Method**: Supabase Edge Function Logs + Gemini CLI Analysis
+
+**Situation**:
+After deploying the generate-headshot Edge Function (v51), the Astria API returns a 422 error indicating that the images array must contain at least one image. This prevents model training from starting.
+
+**Error Details**:
+```
+POST https://imzlzufdujhcbebibgpj.supabase.co/functions/v1/generate-headshot 422 (Unprocessable Content)
+❌ Astria API error: 422 {"images":["must contain at least one image"]}
+```
+
+**Root Cause**:
+The `fileToBase64` function in `src/utils/file-utils.ts` was stripping the data URL prefix (`data:image/jpeg;base64,`), but the Astria API expects FULL data URLs with the prefix included.
+
+**Analysis Process**:
+1. ✅ Used Gemini CLI to create debugging checklist
+2. ✅ Used Gemini CLI to review project-tasks.mdc for similar issues
+3. ✅ Used Gemini CLI to analyze codebase and Astria API integration
+4. ✅ Identified data flow from frontend to Astria API
+5. ✅ Found priority-checklist.md showing correct format: `"images": ["data:image/jpeg;base64,..."]`
+6. ✅ Discovered fileToBase64 was stripping the prefix at line 15
+
+**Solution**:
+Modified `fileToBase64` to return the complete data URL (`reader.result`) instead of stripping the prefix.
+
+```typescript
+// BEFORE (BROKEN):
+reader.onload = () => {
+  if (typeof reader.result === 'string') {
+    // Remove the data URL prefix (data:image/jpeg;base64,)
+    const base64 = reader.result.split(',')[1];
+    resolve(base64);
+  }
+};
+
+// AFTER (FIXED):
+reader.onload = () => {
+  if (typeof reader.result === 'string') {
+    // FIXED: Astria API expects full data URL with prefix (data:image/jpeg;base64,...)
+    // Return the complete data URL, not just the base64 part
+    resolve(reader.result);
+  }
+};
+```
+
+**Files Modified**:
+- `src/utils/file-utils.ts` (lines 14-16)
+
+**Next Verification Steps**:
+1. ⚠️ Build frontend with `npm run build`
+2. ⚠️ Deploy updated code to production
+3. ⚠️ Test model training with 4-10 images
+4. ⚠️ Verify no 422 errors in browser console
+5. ⚠️ Check Edge Function logs to ensure Astria API accepts images
+6. ⚠️ Confirm model training starts successfully
+
+**Prevention Measures**:
+- Add unit tests for `fileToBase64` function to ensure correct data URL formatting
+- Review API documentation carefully for expected data formats before implementation
+- Add validation to edge function to check for valid data URL format before calling Astria API
+- Document expected formats in code comments
+
+**Why This Happened**:
+- Misinterpretation of Astria API requirements for data URL format
+- Comment in code suggested removing prefix was intended behavior
+- Lack of thorough testing with actual Astria API calls
+- No validation of image format before sending to API
+
+**Related Issues**:
+- May have contributed to TrainModelHandler 500 errors if validation was failing
+- Explains why images array appeared empty in Astria API requests
+
+**Documentation**:
+- Updated `src/utils/file-utils.ts` with comments explaining the required data URL format
+- Added unit test requirement to prevention measures
+- Documented correct format in this entry: `data:image/jpeg;base64,[base64_string]`
+
+---
+
 ### Fix #1: Astria Flux Model Compatibility (CRITICAL)
 **Status**: ✅ COMPLETED AND DEPLOYED
 **Edge Function Version**: v40

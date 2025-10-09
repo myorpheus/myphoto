@@ -160,6 +160,155 @@ console.log("🔍 Astria response:", astriaData);
 
 ---
 
+## 🚨 CRITICAL P0.2: Astria API 422 Error - Images Array Format Issue (2025-10-09)
+
+**ERROR**: Astria API returns 422 - "images must contain at least one image"
+**STATUS**: ⚠️ CODE FIXED - AWAITING BUILD & DEPLOYMENT
+**IMPACT**: Model training completely blocked - users cannot create new models
+**ROOT CAUSE**: fileToBase64 function strips data URL prefix, but Astria API requires full data URLs
+**TIME TO FIX**: 10 minutes (build + deploy)
+
+### ⚡ IMMEDIATE FIX REQUIRED
+
+**Root Cause Identified**:
+- The `fileToBase64` function in `src/utils/file-utils.ts` was stripping the `data:image/jpeg;base64,` prefix
+- Astria API expects FULL data URLs with prefix: `["data:image/jpeg;base64,..."]`
+- Code was sending only base64 strings without prefix: `["iVBORw0KGgo..."]`
+
+**Fix Applied**:
+- Modified `fileToBase64` to return complete data URL (`reader.result`)
+- Updated comment to clarify Astria API format requirement
+
+### [P0.2] DEPLOYMENT CHECKLIST - Do These IN ORDER
+
+#### Step 1: Build Frontend (REQUIRED)
+- [ ] Navigate to project root: `cd /Users/dimaglinskii/Documents/GitHub/myphoto`
+- [ ] Install dependencies if needed: `npm install`
+- [ ] Build production bundle: `npm run build`
+- [ ] Verify build success (no errors)
+- [ ] Note new build hash in `dist/assets/` directory
+
+#### Step 2: Deploy to Production (REQUIRED)
+- [ ] Deploy updated frontend to https://myphoto.heyphotoai.com
+- [ ] Clear CDN cache if applicable
+- [ ] Verify deployment timestamp updated
+
+#### Step 3: Test Model Training (CRITICAL VERIFICATION)
+- [ ] Open https://myphoto.heyphotoai.com in browser
+- [ ] Clear browser cache (Cmd+Shift+R / Ctrl+Shift+F5)
+- [ ] Navigate to headshot generator
+- [ ] Upload 4-10 training photos
+- [ ] Enter model name
+- [ ] Click "Start Training" or "Generate Headshots"
+- [ ] Open browser DevTools → Network tab
+- [ ] Find POST request to `/functions/v1/generate-headshot`
+- [ ] Check Request Payload → `images` array
+- [ ] **Verify**: Each image string starts with `data:image/jpeg;base64,` or similar
+- [ ] **Verify**: Response is 200 OK (not 422)
+- [ ] **Verify**: Training starts successfully
+
+#### Step 4: Monitor Edge Function Logs
+- [ ] Open Supabase Dashboard → Functions → generate-headshot → Logs
+- [ ] Watch for new training requests
+- [ ] **Verify**: No more 422 errors from Astria API
+- [ ] **Verify**: Log shows "✅ Astria model created:"
+- [ ] **Verify**: tune_id returned successfully
+
+#### Step 5: End-to-End Verification
+- [ ] Wait for model training to complete (5-10 minutes)
+- [ ] **Verify**: Training completes successfully
+- [ ] **Verify**: Model appears in models list
+- [ ] **Verify**: Can generate images with trained model
+- [ ] **Verify**: No errors in browser console
+
+### What Was Fixed:
+
+**File Modified**: `src/utils/file-utils.ts` (lines 14-16)
+
+**Before (BROKEN)**:
+```typescript
+reader.onload = () => {
+  if (typeof reader.result === 'string') {
+    // Remove the data URL prefix (data:image/jpeg;base64,)
+    const base64 = reader.result.split(',')[1];
+    resolve(base64);
+  }
+};
+```
+
+**After (FIXED)**:
+```typescript
+reader.onload = () => {
+  if (typeof reader.result === 'string') {
+    // FIXED: Astria API expects full data URL with prefix (data:image/jpeg;base64,...)
+    // Return the complete data URL, not just the base64 part
+    resolve(reader.result);
+  }
+};
+```
+
+### Expected Behavior After Fix:
+
+**Request Payload Format** (in Network tab):
+```json
+{
+  "action": "train_model",
+  "name": "My Model",
+  "images": [
+    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...",
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAB...",
+    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAAAAAAD..."
+  ],
+  "steps": 500,
+  "face_crop": true
+}
+```
+
+**Astria API Response** (200 OK):
+```json
+{
+  "success": true,
+  "model": {
+    "id": 12345,
+    "status": "training",
+    "name": "My Model 1728401234567"
+  }
+}
+```
+
+### Rollback Plan (If Fix Doesn't Work):
+
+If the fix causes new issues:
+1. Revert `src/utils/file-utils.ts` to previous version
+2. Rebuild: `npm run build`
+3. Redeploy frontend
+4. Investigate alternative solutions (check Astria API docs)
+
+### Prevention Measures:
+
+- [ ] Add unit tests for `fileToBase64` function
+- [ ] Test with actual Astria API before deploying
+- [ ] Add validation in edge function to check data URL format
+- [ ] Document expected formats in code comments
+
+### Common Issues After Deployment:
+
+**Issue 1: Still getting 422 errors**
+- **Check**: Browser cache - force refresh (Cmd+Shift+R)
+- **Check**: CDN cache - wait 5 minutes or purge manually
+- **Check**: Correct build deployed (check build hash)
+
+**Issue 2: Images too large (413 error)**
+- **Solution**: Add client-side image compression before upload
+- **Solution**: Validate file sizes (max 10MB per image)
+
+**Issue 3: Different error from Astria**
+- **Action**: Check edge function logs for new error message
+- **Action**: Verify Astria API key is valid
+- **Action**: Check Astria API documentation for changes
+
+---
+
 ## 🚨 RESOLVED: Generate-Headshot Edge Function Deployment (2025-10-08)
 
 **ERROR**: generate-headshot Edge Function does not exist on Supabase
