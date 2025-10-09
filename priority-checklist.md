@@ -160,14 +160,14 @@ console.log("🔍 Astria response:", astriaData);
 
 ---
 
-## 🚨 CRITICAL P0.2: Astria API 422 Error - Images Array Format Issue (2025-10-09)
+## 🚨 CRITICAL P0.2: Astria API 422 Error - DEPLOYED BUT STILL FAILING (2025-10-09)
 
-**ERROR**: Astria API returns 422 - "images must contain at least one image"
-**STATUS**: ⚠️ CODE FIXED + BUILT - ❌ NOT DEPLOYED YET
+**ERROR**: Astria API returns 422 - "Failed to start model training"
+**STATUS**: 🔴 FIX DEPLOYED (index-DzN9IrE0.js) - ⚠️ STILL RETURNING 422 ERRORS
 **IMPACT**: Model training completely blocked - users cannot create new models
-**ROOT CAUSE**: fileToBase64 function was stripping data URL prefix, Astria API requires full data URLs
-**FIX STATUS**: ✅ Code fixed, ✅ Built (index-DzN9IrE0.js), ❌ NOT deployed to production
-**TIME TO FIX**: 5 minutes (deploy + test)
+**PREVIOUS FIX**: fileToBase64 data URL prefix fix DEPLOYED to https://myphoto.heyphotoai.com
+**CURRENT SITUATION**: Error persists after deployment - need deeper investigation
+**TIME TO FIX**: 15-30 minutes (requires Edge Function log analysis)
 
 ### 🔴 URGENT: Error Still Occurring - Deployment Needed
 
@@ -400,6 +400,131 @@ If the fix causes new issues:
 - [ ] Test with actual Astria API before deploying
 - [ ] Add validation in edge function to check data URL format
 - [ ] Document expected formats in code comments
+
+---
+
+## 🚨 NEW: 422 Error AFTER Deployment - Advanced Debugging (2025-10-09 16:00)
+
+**🤖 GEMINI CLI COMPREHENSIVE ANALYSIS - ALL POSSIBLE 422 CAUSES**
+
+### 📋 ALL POSSIBLE CAUSES OF 422 ERRORS (Astria API)
+
+Based on Gemini CLI analysis of astria_prompt.md and project history:
+
+**A. Images Array Issues:**
+- **A1. Empty Images Array** - Most common (Fix #0.2)
+- **A2. Insufficient Count** - Less than 4 images
+- **A3. Excessive Count** - More than 20 images
+- **A4. Invalid Image Format** - Corrupted base64 data
+- **A5. Incorrect MIME Type** - GIF instead of JPEG/PNG
+- **A6. Missing Base64 Data** - Only prefix, no data after comma
+
+**B. Parameter Validation Issues:**
+- **B1. Invalid Model Name** - Special characters, underscores
+- **B2. Missing Required Parameters**
+- **B3. Invalid Parameter Values** - steps, face_crop outside range
+
+**C. API Key Issues:**
+- **C1. Rate Limiting** - Hit API quota
+- **C2. Permission Issues** - Key lacks model creation access
+
+### [P0] CRITICAL: Edge Function Log Analysis (DO THIS FIRST)
+
+**Step 1: Access Supabase Logs**
+- [ ] Open Supabase Dashboard → Functions → generate-headshot → Logs
+- [ ] Find request at timestamp 2025-10-09T15:42:01 (from error)
+- [ ] Copy COMPLETE error message from Astria API
+- [ ] Look for **ACTUAL** Astria error (not just generic "Failed to start model training")
+
+**Step 2: Inspect Request to Astria API**
+- [ ] Find the request body sent to `https://api.astria.ai/tunes`
+- [ ] Verify `images` array structure:
+  - [ ] Contains 4-20 elements?
+  - [ ] Each element starts with `data:image/jpeg;base64,` or `data:image/png;base64,`?
+  - [ ] Base64 data is NOT truncated?
+  - [ ] No suspicious characters in base64 data?
+- [ ] Verify `name` parameter:
+  - [ ] Contains ONLY letters, numbers, spaces?
+  - [ ] No underscores, dashes, or special characters?
+- [ ] Verify other parameters:
+  - [ ] `steps`: Should be positive integer
+  - [ ] `face_crop`: Should be boolean
+
+**Step 3: Check Astria API Response**
+- [ ] Copy the exact error response from Astria
+- [ ] Look for specific error messages like:
+  - `{"images":["must contain at least one image"]}`
+  - `{"name":["only English letters, numbers and spaces allowed"]}`
+  - `{"error":"Rate limit exceeded"}`
+  - `{"error":"Invalid API key"}`
+
+### [P1] Client-Side Debugging
+
+**Step 4: Browser DevTools Inspection**
+- [ ] Open https://myphoto.heyphotoai.com in browser
+- [ ] Clear browser cache (Cmd+Shift+R)
+- [ ] Open DevTools → Console → Add breakpoint in headshotGeneratorService.ts
+- [ ] Before trainModel call, log:
+  ```javascript
+  console.log("Image count:", images.length);
+  console.log("First image preview:", images[0].substring(0, 100));
+  console.log("Model name:", name);
+  ```
+- [ ] Verify in console:
+  - [ ] Image count is 4-20
+  - [ ] Images start with correct data URL prefix
+  - [ ] Model name has no special characters
+
+**Step 5: Network Tab Analysis**
+- [ ] Find POST to `/functions/v1/generate-headshot`
+- [ ] Click "Payload" tab
+- [ ] Expand `images` array
+- [ ] **VERIFY EACH IMAGE**:
+  - [ ] Starts with `data:image/jpeg;base64,` or similar
+  - [ ] Has substantial base64 data after comma (not just prefix)
+  - [ ] No obvious truncation or corruption
+
+### [P1] Deployment Verification
+
+**Step 6: Confirm Correct Build Deployed**
+- [ ] Check page source: View → Developer → View Source
+- [ ] Search for "index-DzN9IrE0.js"
+- [ ] If found → Correct build deployed ✅
+- [ ] If NOT found → Wrong build deployed ❌ - redeploy!
+- [ ] Add version number to UI for easier verification:
+  ```typescript
+  console.log("Build version: index-DzN9IrE0.js");
+  ```
+
+**Step 7: Cache Verification**
+- [ ] Hard refresh browser (Cmd+Shift+R)
+- [ ] Clear browser cache completely
+- [ ] Try in incognito/private window
+- [ ] Wait 5-10 minutes for CDN cache to expire
+- [ ] If using CDN, manually purge cache
+
+### [P2] Testing with Different Data
+
+**Step 8: Isolate the Problem**
+- [ ] Test with MINIMAL model name (e.g., "test")
+- [ ] Test with EXACTLY 4 images
+- [ ] Test with different image types (JPEG vs PNG)
+- [ ] Test with smaller images (<1MB each)
+- [ ] Try in different browser
+- [ ] Try with different user account
+
+### 🔍 HISTORICAL PATTERNS (From project-tasks.mdc)
+
+**Previous 422 Error (Fix #0.2)**:
+- **Cause**: Data URL prefix stripped
+- **Solution**: Return full `reader.result`
+- **Lesson**: Always check Astria API docs for exact format
+
+**Key Takeaways**:
+1. Don't assume API requirements - verify in docs
+2. Test with actual API before deployment
+3. Add validation before sending to API
+4. Check Edge Function logs for ACTUAL error
 
 ### Common Issues After Deployment:
 
