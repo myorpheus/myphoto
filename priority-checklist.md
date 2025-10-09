@@ -171,10 +171,12 @@ console.log("🔍 Astria response:", astriaData);
 
 ### 🔴 URGENT: Error Still Occurring - Deployment Needed
 
-**Current Situation (2025-10-09T15:05:29):**
-- Error logs show SAME 422 error after fix was applied
-- This is EXPECTED - the fix hasn't been deployed yet!
-- Built files (dist/) are ready but not uploaded to production server
+**Current Situation (2025-10-09T15:42:01):**
+- ✅ **GEMINI CLI ANALYSIS COMPLETE**: Code fix verified as CORRECT
+- ⚠️ Error logs show SAME 422 error after fix was applied
+- ✅ This is EXPECTED - the fix hasn't been deployed yet!
+- ✅ Built files (dist/) are ready but not uploaded to production server
+- 📊 **Gemini Confirmation**: fileToBase64 now correctly returns full data URL with prefix
 
 ### ⚡ IMMEDIATE FIX REQUIRED
 
@@ -187,47 +189,147 @@ console.log("🔍 Astria response:", astriaData);
 - Modified `fileToBase64` to return complete data URL (`reader.result`)
 - Updated comment to clarify Astria API format requirement
 
+### 🤖 GEMINI CLI ANALYSIS FINDINGS (2025-10-09T15:45:00)
+
+**Analysis Performed**:
+- ✅ Reviewed astria_prompt.md - Confirmed Astria API requires full data URL prefix
+- ✅ Reviewed src/utils/file-utils.ts - Confirmed code NOW returns full data URL
+- ✅ Reviewed priority-checklist.md - Confirmed deployment status is NOT DEPLOYED
+
+**Gemini Conclusions**:
+1. **Is the code fix correct?** ✅ YES - fileToBase64 correctly returns full data URL with prefix
+2. **Why is error still occurring?** ⚠️ Fix NOT deployed to production environment yet
+3. **Next steps?** 🚀 Deploy built files (dist/) to https://myphoto.heyphotoai.com
+
+**Gemini Verification**: The fix aligns 100% with Astria API requirements documented in astria_prompt.md section 5
+
 ### [P0.2] DEPLOYMENT CHECKLIST - Do These IN ORDER
 
-#### Step 1: Build Frontend (REQUIRED)
-- [ ] Navigate to project root: `cd /Users/dimaglinskii/Documents/GitHub/myphoto`
-- [ ] Install dependencies if needed: `npm install`
-- [ ] Build production bundle: `npm run build`
-- [ ] Verify build success (no errors)
-- [ ] Note new build hash in `dist/assets/` directory
+**🤖 GEMINI CLI GENERATED - Comprehensive Deployment & Testing Guide**
 
-#### Step 2: Deploy to Production (REQUIRED)
-- [ ] Deploy updated frontend to https://myphoto.heyphotoai.com
-- [ ] Clear CDN cache if applicable
-- [ ] Verify deployment timestamp updated
+#### Step 1: Pre-Deployment Verification (REQUIRED)
+- [ ] **Verify Build Artifacts**:
+  - [ ] Confirm correct build version: dist/assets/index-DzN9IrE0.js
+  - [ ] Verify git commit hash: 8f961d1 (fix) + 84751ac (docs)
+  - [ ] Check no unintended changes included in build
+- [ ] **Configuration Review**:
+  - [ ] Verify all environment variables for production
+  - [ ] Check ASTRIA_API_KEY configured in Supabase secrets
+  - [ ] Confirm API authentication mechanisms working
+- [ ] **Backup Current System**:
+  - [ ] Create Supabase database backup via Dashboard
+  - [ ] Snapshot current deployment state
+- [ ] **Monitor Baseline Metrics**:
+  - [ ] Note current CPU, memory, network usage
+  - [ ] Establish baseline for performance comparison
 
-#### Step 3: Test Model Training (CRITICAL VERIFICATION)
+#### Step 2: Build Frontend (COMPLETED ✅)
+- [x] Navigate to project root: `cd /Users/dimaglinskii/Documents/GitHub/myphoto`
+- [x] Install dependencies if needed: `npm install`
+- [x] Build production bundle: `npm run build`
+- [x] Verify build success (no errors)
+- [x] Note new build hash in `dist/assets/` directory: index-DzN9IrE0.js
+
+#### Step 3: Deploy to Production (CRITICAL - USER ACTION REQUIRED)
+- [ ] **Deployment Window**:
+  - [ ] Confirm deployment timing with stakeholders
+  - [ ] Announce any potential service interruptions
+- [ ] **Staged Deployment (Recommended)**:
+  - [ ] Deploy to staging environment first if available
+  - [ ] Perform thorough testing in staging
+- [ ] **Production Deployment**:
+  - [ ] Deploy updated frontend to https://myphoto.heyphotoai.com
+  - [ ] Use deployment strategy that minimizes downtime
+  - [ ] Monitor deployment process for errors
+- [ ] **Clear Caches**:
+  - [ ] Clear CDN cache if applicable (wait 5 minutes or purge)
+  - [ ] Verify deployment timestamp updated
+- [ ] **Update Monitoring**:
+  - [ ] Ensure monitoring systems track application health
+  - [ ] Verify alerts configured for issues
+
+#### Step 4: Post-Deployment Testing (CRITICAL VERIFICATION)
+
+**4A. Basic Functionality Tests**:
+- [ ] Verify core API endpoints functioning (health check, auth)
+- [ ] Check browser console for JavaScript errors
+
+**4B. 422 Error Fix Verification**:
 - [ ] Open https://myphoto.heyphotoai.com in browser
 - [ ] Clear browser cache (Cmd+Shift+R / Ctrl+Shift+F5)
 - [ ] Navigate to headshot generator
-- [ ] Upload 4-10 training photos
-- [ ] Enter model name
+- [ ] Upload 4-10 training photos (JPEG/PNG)
+- [ ] Enter valid model name (letters, numbers, spaces only)
 - [ ] Click "Start Training" or "Generate Headshots"
-- [ ] Open browser DevTools → Network tab
+- [ ] **CRITICAL**: Open browser DevTools → Network tab
 - [ ] Find POST request to `/functions/v1/generate-headshot`
-- [ ] Check Request Payload → `images` array
-- [ ] **Verify**: Each image string starts with `data:image/jpeg;base64,` or similar
-- [ ] **Verify**: Response is 200 OK (not 422)
-- [ ] **Verify**: Training starts successfully
+- [ ] **SUCCESS CRITERIA**:
+  - [ ] Check Request Payload → `images` array
+  - [ ] **Verify**: Each image string starts with `data:image/jpeg;base64,` or `data:image/png;base64,`
+  - [ ] **Verify**: Response is 200 OK (NOT 422)
+  - [ ] **Verify**: Response includes tune_id or model details
+  - [ ] **Verify**: Training status shows "training" or "queued"
+  - [ ] **Verify**: No errors in browser console
 
-#### Step 4: Monitor Edge Function Logs
+**4C. Boundary Testing**:
+- [ ] Test with <4 images → Verify 422 error with clear message
+- [ ] Test with >20 images → Verify 422 error with clear message
+- [ ] Test with invalid model name (special chars) → Verify rejection
+- [ ] Test with very large images (>10MB) → Verify handling
+
+**4D. Performance Testing**:
+- [ ] Monitor API response times (should be <2 seconds)
+- [ ] Check resource utilization (CPU, memory)
+- [ ] Verify no performance regressions
+
+#### Step 5: Monitor Edge Function Logs
 - [ ] Open Supabase Dashboard → Functions → generate-headshot → Logs
-- [ ] Watch for new training requests
-- [ ] **Verify**: No more 422 errors from Astria API
-- [ ] **Verify**: Log shows "✅ Astria model created:"
-- [ ] **Verify**: tune_id returned successfully
+- [ ] Watch for new training requests in real-time
+- [ ] **SUCCESS CRITERIA**:
+  - [ ] No more 422 errors from Astria API
+  - [ ] Log shows "✅ Astria model created:" or similar success message
+  - [ ] tune_id returned successfully in logs
+  - [ ] No authentication errors (401/403)
+  - [ ] No server errors (500)
 
-#### Step 5: End-to-End Verification
-- [ ] Wait for model training to complete (5-10 minutes)
-- [ ] **Verify**: Training completes successfully
-- [ ] **Verify**: Model appears in models list
-- [ ] **Verify**: Can generate images with trained model
-- [ ] **Verify**: No errors in browser console
+#### Step 6: End-to-End Verification
+- [ ] Wait for model training to complete (5-10 minutes typical)
+- [ ] **SUCCESS CRITERIA**:
+  - [ ] Training completes successfully (status: "trained")
+  - [ ] Model appears in models list on dashboard
+  - [ ] Can select trained model for image generation
+  - [ ] Can generate images with trained model
+  - [ ] Generated images display correctly
+  - [ ] No errors in browser console during entire workflow
+  - [ ] Callback webhook triggered successfully (if configured)
+
+#### Step 7: Rollback Plan (IF NEEDED)
+
+**Rollback Triggers**:
+- Any success criteria not met
+- Significant issues identified after deployment
+- New errors introduced by the deployment
+- Performance regressions detected
+
+**Rollback Procedure**:
+- [ ] **Initiate Rollback**:
+  - [ ] Announce rollback to stakeholders
+  - [ ] Document reason for rollback
+- [ ] **Revert Application**:
+  - [ ] Deploy previous stable build artifact
+  - [ ] Revert configuration changes if any were made
+  - [ ] Clear caches again
+- [ ] **Restore Database** (if needed):
+  - [ ] Restore from backup created in Step 1
+  - [ ] Verify data integrity after restore
+- [ ] **Verify Rollback Success**:
+  - [ ] Test that previous functionality is restored
+  - [ ] Monitor for stability
+- [ ] **Post-Mortem**:
+  - [ ] Investigate cause of failure
+  - [ ] Document findings
+  - [ ] Address issues before next deployment attempt
+  - [ ] Update checklist with lessons learned
 
 ### What Was Fixed:
 
