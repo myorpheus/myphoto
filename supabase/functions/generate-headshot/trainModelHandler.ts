@@ -33,6 +33,13 @@ export async function trainModelHandler(
     // 3. Request parameters received
     console.log(`📋 trainModelHandler: Request parameters received: ${JSON.stringify({ name, imageCount: images.length, steps, face_crop })}`);
 
+    // DEBUG: Log first image preview to verify data URL format
+    if (images && images.length > 0) {
+      console.log(`🔍 trainModelHandler: First image preview (first 100 chars):`, images[0].substring(0, 100));
+    } else {
+      console.log(`❌ trainModelHandler: Images array is EMPTY!`);
+    }
+
     // Validate inputs
     if (!name || !images || images.length < 4 || images.length > 20) {
       console.warn("⚠️ trainModelHandler: Invalid training parameters. Need 4-20 images.");

@@ -67,6 +67,11 @@ export class HeadshotGeneratorService {
 
     const base64Images = await Promise.all(imagePromises);
 
+    // DEBUG: Log images being sent
+    console.log('🔍 trainModel - Images array length:', base64Images.length);
+    console.log('🔍 trainModel - First image preview:', base64Images[0]?.substring(0, 100));
+    console.log('🔍 trainModel - Model name:', modelName);
+
     // Call edge function to train model
     const response = await fetch(this.edgeFunctionUrl, {
       method: 'POST',
