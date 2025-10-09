@@ -11,14 +11,15 @@ interface User {
 }
 
 export async function statusCheckHandler(
-  req: Request,
+  body: any,
   user: User,
   supabaseUrl: string,
   supabaseServiceRoleKey: string,
   astriaApiKey: string,
 ): Promise<Response> {
   try {
-    const { action, ...params } = await req.json();
+    // Body is already parsed in index.ts and contains action + params
+    const { action, ...params } = body;
 
     switch (action) {
       case "check_status": {

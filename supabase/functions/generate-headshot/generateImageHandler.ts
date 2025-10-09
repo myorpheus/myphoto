@@ -18,14 +18,15 @@ interface User {
 }
 
 export async function generateImageHandler(
-  req: Request,
+  body: GenerateImageParams,
   user: User,
   supabaseUrl: string,
   supabaseServiceRoleKey: string,
   astriaApiKey: string,
 ): Promise<Response> {
   try {
-    const { model_id, prompt, custom_prompt, num_images = 4, style = 'professional', gender = 'man', negative_prompt } = await req.json() as GenerateImageParams;
+    // Body is already parsed in index.ts, so just destructure it
+    const { model_id, prompt, custom_prompt, num_images = 4, style = 'professional', gender = 'man', negative_prompt } = body;
 
     if (!model_id || !prompt) {
       return new Response(

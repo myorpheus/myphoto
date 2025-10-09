@@ -14,17 +14,28 @@ interface User {
 }
 
 export async function trainModelHandler(
-  req: Request,
+  body: TrainModelParams,
   user: User,
   supabaseUrl: string,
   supabaseServiceRoleKey: string,
   astriaApiKey: string,
 ) {
   try {
-    const { name, images, steps = 500, face_crop = true } = (await req.json()) as TrainModelParams;
+    // 1. Function entry confirmation
+    console.log("➡️ trainModelHandler: Function entry");
+
+    // 2. ASTRIA_API_KEY availability at runtime
+    console.log(`🔑 trainModelHandler: ASTRIA_API_KEY availability: ${astriaApiKey ? 'Available' : 'Not Available'}`);
+
+    // Body is already parsed in index.ts, so just destructure it
+    const { name, images, steps = 500, face_crop = true } = body;
+
+    // 3. Request parameters received
+    console.log(`📋 trainModelHandler: Request parameters received: ${JSON.stringify({ name, imageCount: images.length, steps, face_crop })}`);
 
     // Validate inputs
     if (!name || !images || images.length < 4 || images.length > 20) {
+      console.warn("⚠️ trainModelHandler: Invalid training parameters. Need 4-20 images.");
       return new Response(
         JSON.stringify({ error: "Invalid training parameters. Need 4-20 images." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -34,6 +45,25 @@ export async function trainModelHandler(
     // Initialize Supabase client with service role
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
+    // 4. Astria API request details
+    const astriaApiRequestBody = {
+      tune: {
+        title: name,
+        // FIXED: Astria API only allows letters, numbers, and spaces (no underscores)
+        // Removed underscore, using space instead
+        name: `${name} ${Date.now()}`,
+        callback: `${supabaseUrl}/functions/v1/astria-webhook`,
+      },
+      images: images,
+      steps: steps,
+      face_crop: face_crop,
+    };
+
+    console.log(`🌐 trainModelHandler: Astria API request details:
+      - URL: https://api.astria.ai/tunes
+      - Method: POST
+      - Body: ${JSON.stringify(astriaApiRequestBody)}`);
+
     // Call Astria API to create a tune (model)
     const response = await fetch("https://api.astria.ai/tunes", {
       method: "POST",
@@ -41,19 +71,11 @@ export async function trainModelHandler(
         "Authorization": `Bearer ${astriaApiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        tune: {
-          title: name,
-          // FIXED: Astria API only allows letters, numbers, and spaces (no underscores)
-          // Removed underscore, using space instead
-          name: `${name} ${Date.now()}`,
-          callback: `${supabaseUrl}/functions/v1/astria-webhook`,
-        },
-        images: images,
-        steps: steps,
-        face_crop: face_crop,
-      }),
+      body: JSON.stringify(astriaApiRequestBody),
     });
+
+    // 5. Astria API response status
+    console.log(`📨 trainModelHandler: Astria API response status: ${response.status}`);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -65,7 +87,14 @@ export async function trainModelHandler(
     }
 
     const astriaData = await response.json();
-    console.log("✅ Astria model created:", astriaData);
+    console.log("✅ trainModelHandler: Astria model created:", astriaData);
+
+    // 6. Database operations - Before insert
+    console.log(`💾 trainModelHandler: Database operation - Inserting model data:
+      - user_id: ${user.id}
+      - astria_model_id: ${astriaData.id}
+      - name: ${name}
+      - status: ${astriaData.status || "training"}`);
 
     // Save model to database
     const { data: dbModel, error: dbError } = await supabase
@@ -80,23 +109,29 @@ export async function trainModelHandler(
       .single();
 
     if (dbError) {
-      console.error("❌ Database error saving model:", dbError);
+      console.error("❌ trainModelHandler: Database error saving model:", dbError);
       return new Response(
         JSON.stringify({ error: "Failed to save model to database", details: dbError }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // 6. Database operations - After insert
+    console.log(`✅ trainModelHandler: Database operation - Model inserted successfully. Model data: ${JSON.stringify(dbModel)}`);
+
     return new Response(
       JSON.stringify({ success: true, model: dbModel, astriaModel: astriaData }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    // 7. General error catch
     console.error("❌ trainModelHandler error:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
       JSON.stringify({ error: "Internal server error in trainModelHandler", details: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+  } finally {
+    console.log("🏁 trainModelHandler: Function exit");
   }
 }

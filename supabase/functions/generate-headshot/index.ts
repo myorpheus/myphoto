@@ -56,18 +56,20 @@ serve(async (req) => {
       );
     }
 
-    const { action } = await req.json();
+    // Read body once - cannot be consumed multiple times
+    const body = await req.json();
+    const { action } = body;
 
     console.log(`🚀 Processing request: ${action} for user ${user.id}`);
 
     switch (action) {
       case "train_model":
-        return await trainModelHandler(req, user, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ASTRIA_API_KEY);
+        return await trainModelHandler(body, user, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ASTRIA_API_KEY);
       case "generate_image":
-        return await generateImageHandler(req, user, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ASTRIA_API_KEY);
+        return await generateImageHandler(body, user, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ASTRIA_API_KEY);
       case "check_status":
       case "list_models":
-        return await statusCheckHandler(req, user, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ASTRIA_API_KEY);
+        return await statusCheckHandler(body, user, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ASTRIA_API_KEY);
       default:
         return new Response(
           JSON.stringify({ error: "Invalid action. Use: train_model, generate_image, check_status, or list_models" }),
