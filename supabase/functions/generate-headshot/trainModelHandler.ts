@@ -99,10 +99,24 @@ export async function trainModelHandler(
 
     // 5. Astria API response status
     console.log(`📨 trainModelHandler: Astria API response status: ${response.status}`);
+    console.log(`📨 trainModelHandler: Astria API response headers:`, JSON.stringify([...response.headers.entries()]));
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("❌ Astria API error:", response.status, errorText);
+      console.error("❌ Astria API error details:");
+      console.error(`  - Status: ${response.status}`);
+      console.error(`  - Status Text: ${response.statusText}`);
+      console.error(`  - Response body: ${errorText}`);
+      console.error(`  - Content-Type: ${response.headers.get('Content-Type')}`);
+
+      // Try to parse as JSON to get structured error
+      try {
+        const errorJson = JSON.parse(errorText);
+        console.error(`  - Parsed error:`, JSON.stringify(errorJson, null, 2));
+      } catch (e) {
+        console.error(`  - Could not parse error as JSON`);
+      }
+
       return new Response(
         JSON.stringify({ error: "Failed to start model training", details: errorText }),
         { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
