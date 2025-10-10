@@ -26,6 +26,7 @@ export async function trainModelHandler(
 
     // 2. ASTRIA_API_KEY availability at runtime
     console.log(`🔑 trainModelHandler: ASTRIA_API_KEY availability: ${astriaApiKey ? 'Available' : 'Not Available'}`);
+    console.log(`🔑 trainModelHandler: ASTRIA_API_KEY length: ${astriaApiKey ? astriaApiKey.length : 0}`);
 
     // Body is already parsed in index.ts, so just destructure it
     const { name, images, steps = 500, face_crop = true } = body;
@@ -33,11 +34,18 @@ export async function trainModelHandler(
     // 3. Request parameters received
     console.log(`📋 trainModelHandler: Request parameters received: ${JSON.stringify({ name, imageCount: images.length, steps, face_crop })}`);
 
-    // DEBUG: Log first image preview to verify data URL format
+    // DEBUG: Log detailed image information and type checking
+    console.log(`🔍 trainModelHandler: Images type: ${typeof images}`);
+    console.log(`🔍 trainModelHandler: Images is Array: ${Array.isArray(images)}`);
+
     if (images && images.length > 0) {
-      console.log(`🔍 trainModelHandler: First image preview (first 100 chars):`, images[0].substring(0, 100));
+      console.log(`🔍 trainModelHandler: Images array details:`);
+      images.forEach((img, index) => {
+        console.log(`  - Image ${index + 1}: type=${typeof img}, length=${img.length}, starts with="${img.substring(0, 50)}"`);
+      });
+      console.log(`🔍 trainModelHandler: Total images payload size: ${JSON.stringify(images).length} characters`);
     } else {
-      console.log(`❌ trainModelHandler: Images array is EMPTY!`);
+      console.log(`❌ trainModelHandler: Images array is EMPTY or falsy! Value: ${JSON.stringify(images)}`);
     }
 
     // Validate inputs
@@ -69,7 +77,15 @@ export async function trainModelHandler(
     console.log(`🌐 trainModelHandler: Astria API request details:
       - URL: https://api.astria.ai/tunes
       - Method: POST
-      - Body: ${JSON.stringify(astriaApiRequestBody)}`);
+      - Body keys: ${Object.keys(astriaApiRequestBody).join(', ')}
+      - Body.images type: ${typeof astriaApiRequestBody.images}
+      - Body.images is Array: ${Array.isArray(astriaApiRequestBody.images)}
+      - Body.images length: ${astriaApiRequestBody.images.length}`);
+
+    // Stringify the body to see what will actually be sent
+    const requestBodyString = JSON.stringify(astriaApiRequestBody);
+    console.log(`📦 trainModelHandler: Stringified body length: ${requestBodyString.length} characters`);
+    console.log(`📦 trainModelHandler: Stringified body preview (first 500 chars): ${requestBodyString.substring(0, 500)}`);
 
     // Call Astria API to create a tune (model)
     const response = await fetch("https://api.astria.ai/tunes", {
@@ -78,7 +94,7 @@ export async function trainModelHandler(
         "Authorization": `Bearer ${astriaApiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(astriaApiRequestBody),
+      body: requestBodyString,
     });
 
     // 5. Astria API response status
