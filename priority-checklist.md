@@ -442,9 +442,31 @@ If the fix causes new issues:
 
 ---
 
-## 🚨 NEW: 422 Error AFTER Deployment - Advanced Debugging (2025-10-09 16:00)
+## 🚨 NEW: 422 Error AFTER Deployment - Enhanced Diagnostics DEPLOYED (2025-10-09 17:00)
 
-**🤖 GEMINI CLI COMPREHENSIVE ANALYSIS - ALL POSSIBLE 422 CAUSES**
+**STATUS**: 🔍 COMPREHENSIVE LOGGING DEPLOYED - AWAITING TEST RESULTS
+**EDGE FUNCTION**: Version 63+ with enhanced diagnostics
+**FRONTEND BUILD**: index-DqcN2hqo.js with debug logging
+**NEXT STEP**: User must test and provide complete logs
+
+### 🎯 New Diagnostic Features Added:
+
+**✅ Image Validation Logging**:
+- Type checking (`typeof images`, `Array.isArray`)
+- Individual image details (type, length, preview)
+- Total payload size tracking
+- First 500 chars of stringified request body
+
+**✅ API Communication Logging**:
+- Complete response headers from Astria
+- Structured error parsing
+- Request body preview before sending
+- API key length verification
+
+**✅ Error Details Enhancement**:
+- Full error body with Content-Type
+- Parsed JSON error structure
+- Status text and HTTP status code
 
 ### 📋 ALL POSSIBLE CAUSES OF 422 ERRORS (Astria API)
 
