@@ -289,6 +289,164 @@ reader.onload = () => {
 - Documented correct format in this entry: `data:image/jpeg;base64,[base64_string]`
 
 ---
+### Fix #0.3: Astria API 422 Error - Wrong Endpoint for Generation (CRITICAL)
+**Status**: 🔴 IDENTIFIED - FIX IN PROGRESS
+**Discovery Date**: 2025-10-10
+**Analysis Method**: Gemini CLI log analysis + Astria API documentation review
+**Documentation**: FIX-422-WRONG-ENDPOINT.md
+
+**Root Cause**:
+Code is calling `/tunes` (training endpoint) with images array when trying to USE existing trained model "new Ru man", instead of calling `/tunes/{tune_id}/prompts` (generation endpoint) with prompt text.
+
+**Impact**:
+- Cannot use existing trained model "new Ru man" for image generation
+- All generation requests fail with 422: "images must contain at least one image"
+- Users are forced to retrain models for every generation attempt
+- Wasted API credits on unnecessary training requests
+
+**Error Details**:
+```
+📋 Request: POST https://api.astria.ai/tunes
+📦 Body: { tune: {...}, images: [4 images], steps: 500, face_crop: true }
+📨 Response: 422 {"images":["must contain at least one image"]}
+```
+
+**Log Analysis** (via Gemini CLI):
+```
+🔍 Images array details:
+  - Image 1: length=185255, starts with="data:image/jpeg;base64,/9j/4..."
+  - Image 2: length=272187, starts with="data:image/jpeg;base64,/9j/4..."
+  - Image 3: length=284995, starts with="data:image/jpeg;base64,/9j/4..."
+  - Image 4: length=293763, starts with="data:image/jpeg;base64,/9j/4..."
+📦 Total payload: 1036423 characters
+📨 Astria API response: 422 {"images":["must contain at least one image"]}
+```
+
+**Why This Happens**:
+1. User has existing trained model "new Ru man" (already completed training)
+2. User wants to GENERATE images using this model
+3. Code incorrectly sends training request to `/tunes` endpoint
+4. Astria API rejects because `/tunes` is for training, not generation
+5. For generation, must use `/tunes/{tune_id}/prompts` with text prompt
+
+**Astria API Endpoints** (from astria_prompt.md):
+```
+Training: POST /tunes
+Body: { tune: {...}, images: [...], steps, face_crop }
+Purpose: Create NEW model
+
+Generation: POST /tunes/{tune_id}/prompts  
+Body: { prompt: { text, negative_prompt, num_images, ... } }
+Purpose: Generate images with EXISTING model
+```
+
+**Solution** (5-step implementation):
+1. **Add model listing function** in statusCheckHandler.ts
+   - Call `GET https://api.astria.ai/tunes`
+   - Filter models with `status: "trained"`
+   - Return list with `tune_id`, `title`, `status`
+
+2. **Add model selection UI** in HeadshotGenerator.tsx
+   - Toggle: "Train New Model" vs "Use Existing Model"
+   - Dropdown showing trained models if "Use Existing" selected
+   - Pass `tune_id` to generation request
+
+3. **Update generateImageHandler.ts** logic
+   - Check if request has `tune_id` (existing) or `images` (new training)
+   - **For existing model** (has `tune_id`):
+     - Call `/tunes/{tune_id}/prompts`
+     - Send prompt format: `{ prompt: { text, negative_prompt, num_images, ... } }`
+     - **DO NOT** include `images` array
+   - **For new training** (has `images`):
+     - Keep current logic calling `/tunes`
+     - Include `images` array as currently done
+
+4. **Fix request body format for generation**:
+   ```typescript
+   // Current (WRONG for generation):
+   {
+     tune: { title, name, callback },
+     images: [...],  // ← Remove for generation!
+     steps: 500,
+     face_crop: true
+   }
+   
+   // Correct for generation:
+   {
+     prompt: {
+       text: "ohwx man in business attire",  // Include trigger word
+       negative_prompt: "blurry, distorted",
+       num_images: 4,
+       super_resolution: true,
+       face_correct: true
+     }
+   }
+   ```
+
+5. **Test end-to-end**:
+   - List models → verify "new Ru man" appears
+   - Select "new Ru man" → verify `tune_id` passed
+   - Generate images → verify calls `/tunes/{tune_id}/prompts`
+   - Check logs → verify 200 OK response with image URLs
+
+**Files to Modify**:
+1. `supabase/functions/generate-headshot/statusCheckHandler.ts` - Add listModels()
+2. `supabase/functions/generate-headshot/generateImageHandler.ts` - Add endpoint logic
+3. `src/services/headshotGeneratorService.ts` - Add listModels() method
+4. `src/pages/HeadshotGenerator.tsx` or new `ModelSelector.tsx` - Add UI
+
+**Quick Test** (to verify endpoint works):
+```bash
+# 1. Get tune_id for "new Ru man"
+curl -H "Authorization: Bearer $ASTRIA_API_KEY" https://api.astria.ai/tunes
+
+# 2. Test generation endpoint directly
+curl -X POST "https://api.astria.ai/tunes/{TUNE_ID}/prompts" \
+  -H "Authorization: Bearer $ASTRIA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": {
+      "text": "ohwx man in business suit",
+      "negative_prompt": "blurry, low quality",
+      "num_images": 4
+    }
+  }'
+
+# Expected: 200 OK with prompt_id
+```
+
+**Related Issues**:
+- Similar to Fix #0.2 (both involve API format misunderstanding)
+- Fix #0.2 was about data URL prefix - this is about wrong endpoint entirely
+- Both show pattern of not fully understanding Astria API structure
+
+**Prevention Measures**:
+- Add API endpoint reference documentation
+- Create endpoint decision tree (training vs generation)
+- Add validation: if `tune_id` present, block `images` array
+- Document trigger word usage for generation
+- Add integration tests for both training and generation flows
+
+**Why This Happened**:
+- Confusion between training workflow and generation workflow
+- No clear separation of concerns in code
+- Single handler trying to do both training and generation
+- Lack of API endpoint documentation in codebase
+- No validation to prevent sending wrong format to wrong endpoint
+
+**Next Steps**:
+1. ⚠️ Implement model listing API call
+2. ⚠️ Add model selection UI
+3. ⚠️ Update generateImageHandler with endpoint logic
+4. ⚠️ Test with existing "new Ru man" model
+5. ⚠️ Deploy and verify generation works
+
+**Documentation**:
+- FIX-422-WRONG-ENDPOINT.md - Comprehensive fix guide with checklist
+- astria_prompt.md - API endpoint reference (sections 3 & 5)
+- TEST-ASTRIA-CONNECTION.md - Testing guide
+
+---
 
 ### Fix #1: Astria Flux Model Compatibility (CRITICAL)
 **Status**: ✅ COMPLETED AND DEPLOYED
