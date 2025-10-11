@@ -27,7 +27,7 @@ interface CheckStatusResponse {
 }
 
 interface GenerateImageParams {
-  tuneId: number;
+  modelId: number; // Database model ID, not Astria tune_id
   prompt: string;
   customPrompt?: string;
   style?: string;
@@ -161,7 +161,7 @@ export class HeadshotGeneratorService {
    * Generate headshot images using a trained model
    */
   async generateImage(params: GenerateImageParams): Promise<GenerateImageResponse> {
-    const { tuneId, prompt, customPrompt, style, gender, numImages = 4, accessToken } = params;
+    const { modelId, prompt, customPrompt, style, gender, numImages = 4, accessToken } = params;
 
     const response = await fetch(this.edgeFunctionUrl, {
       method: 'POST',
@@ -171,7 +171,7 @@ export class HeadshotGeneratorService {
       },
       body: JSON.stringify({
         action: 'generate_image',
-        tune_id: tuneId,
+        model_id: modelId,
         prompt,
         custom_prompt: customPrompt,
         style,
@@ -293,6 +293,30 @@ export class HeadshotGeneratorService {
     }
 
     return session.access_token;
+  }
+
+  /**
+   * List all trained models for the current user
+   */
+  async listTrainedModels(accessToken: string): Promise<any[]> {
+    const response = await fetch(this.edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        action: 'list_models',
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Failed to list models: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.models || [];
   }
 }
 

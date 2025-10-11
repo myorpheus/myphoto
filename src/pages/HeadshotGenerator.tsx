@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import PhotoStyleSelector from '@/components/PhotoStyleSelector';
 import GenerationOptions from '@/components/GenerationOptions';
@@ -12,7 +13,7 @@ import { PendingImageGrid } from '@/components/PendingImageGrid';
 import { useToast } from '@/hooks/use-toast';
 import { useHeadshotGenerator } from '@/hooks/useHeadshotGenerator';
 import { testConfiguration } from '@/utils/headshotDebug';
-import { ArrowLeft, Crown, Coins, Images, Save } from 'lucide-react';
+import { ArrowLeft, Crown, Coins, Images, Save, Sparkles } from 'lucide-react';
 
 const HeadshotGenerator = () => {
   const navigate = useNavigate();
@@ -26,13 +27,17 @@ const HeadshotGenerator = () => {
     customPrompt,
     generatedImages,
     allGeneratedImages,
+    trainedModels,
+    selectedModelId,
     setSelectedStyle,
     setSelectedGender,
     setCustomPrompt,
+    setSelectedModelId,
     handlePhotosSelected,
     handleDownload,
     handleStartNew,
     handleSaveCustomPrompt,
+    handleGenerateWithExistingModel,
   } = useHeadshotGenerator();
 
   const renderCurrentStep = () => {
@@ -140,6 +145,44 @@ const HeadshotGenerator = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Existing Model Selection */}
+                {trainedModels.length > 0 && (
+                  <div className="space-y-3 p-4 border rounded-lg bg-primary/5">
+                    <Label htmlFor="modelSelect" className="text-base font-semibold flex items-center gap-2">
+                      <Sparkles className="h-5 w-5 text-primary" />
+                      Use Existing Trained Model
+                    </Label>
+                    <div className="flex gap-3">
+                      <Select
+                        value={selectedModelId?.toString() || ''}
+                        onValueChange={(value) => setSelectedModelId(value ? parseInt(value) : null)}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Select a trained model..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {trainedModels.map((model) => (
+                            <SelectItem key={model.id} value={model.id.toString()}>
+                              {model.name} ({model.status})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        onClick={handleGenerateWithExistingModel}
+                        disabled={!selectedModelId || isProcessing}
+                        className="gap-2"
+                      >
+                        <Images className="h-4 w-4" />
+                        Generate
+                      </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Generate new headshots using a previously trained model (skips training step).
+                    </p>
+                  </div>
+                )}
+
                 {/* Photo Style Selection */}
                 <PhotoStyleSelector
                   selectedStyle={selectedStyle}

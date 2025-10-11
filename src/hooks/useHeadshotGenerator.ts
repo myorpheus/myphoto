@@ -17,6 +17,8 @@ interface UseHeadshotGeneratorReturn {
   userCredits: number;
   selectedFiles: File[];
   currentModel: any;
+  trainedModels: any[];
+  selectedModelId: number | null;
   generatedImages: string[];
   allGeneratedImages: GeneratedImage[];
   isProcessing: boolean;
@@ -26,10 +28,12 @@ interface UseHeadshotGeneratorReturn {
   setSelectedStyle: (style: string) => void;
   setSelectedGender: (gender: string) => void;
   setCustomPrompt: (prompt: string) => void;
+  setSelectedModelId: (modelId: number | null) => void;
   handlePhotosSelected: (files: File[]) => Promise<void>;
   handleDownload: (imageUrl: string) => Promise<void>;
   handleStartNew: () => void;
   handleSaveCustomPrompt: () => Promise<void>;
+  handleGenerateWithExistingModel: () => Promise<void>;
 }
 
 export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
@@ -37,6 +41,8 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
   const [userCredits, setUserCredits] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [currentModel, setCurrentModel] = useState<any>(null);
+  const [trainedModels, setTrainedModels] = useState<any[]>([]);
+  const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [allGeneratedImages, setAllGeneratedImages] = useState<GeneratedImage[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -66,6 +72,13 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
       if (savedPrompt) {
         setCustomPrompt(savedPrompt);
       }
+
+      // Load trained models
+      const accessToken = await headshotGeneratorService.getAccessToken();
+      const models = await headshotGeneratorService.listTrainedModels(accessToken);
+      setTrainedModels(models);
+
+      console.log('✅ Loaded trained models:', models.length);
     } catch (error) {
       console.error('Error loading user data:', error);
       toast({
@@ -246,15 +259,9 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
       const prompt = 'professional headshot, business attire, clean background, high quality, studio lighting, corporate portrait';
       const accessToken = await headshotGeneratorService.getAccessToken();
 
-      // Get the model details to retrieve the astria_model_id (tuneId)
-      const modelDetails = await headshotGeneratorService.getModel(dbModelId);
-      if (!modelDetails?.astria_model_id) {
-        throw new Error('Model training not completed - missing Astria model ID');
-      }
-      const tuneId = modelDetails.astria_model_id;
-
+      // Pass the database model ID directly - backend will look up the Astria model ID
       const generateResponse = await headshotGeneratorService.generateImage({
-        tuneId,
+        modelId: dbModelId,
         prompt,
         customPrompt: customPrompt || undefined,
         style: selectedStyle,
@@ -351,11 +358,50 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
     }
   };
 
+  const handleGenerateWithExistingModel = async () => {
+    if (!selectedModelId) {
+      toast({
+        title: 'No Model Selected',
+        description: 'Please select a trained model to generate images',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (userCredits < 4) {
+      toast({
+        title: 'Insufficient Credits',
+        description: 'You need at least 4 credits to generate headshots. Purchase more credits to continue.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    setCurrentStep('generating');
+
+    try {
+      console.log('🎨 Generating with existing model ID:', selectedModelId);
+      await generateHeadshots(selectedModelId);
+    } catch (error) {
+      console.error('Error generating with existing model:', error);
+      toast({
+        title: 'Generation Failed',
+        description: 'Failed to generate images with selected model. Please try again.',
+        variant: 'destructive',
+      });
+      setCurrentStep('upload');
+      setIsProcessing(false);
+    }
+  };
+
   return {
     currentStep,
     userCredits,
     selectedFiles,
     currentModel,
+    trainedModels,
+    selectedModelId,
     generatedImages,
     allGeneratedImages,
     isProcessing,
@@ -365,9 +411,11 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
     setSelectedStyle,
     setSelectedGender,
     setCustomPrompt,
+    setSelectedModelId,
     handlePhotosSelected,
     handleDownload,
     handleStartNew,
     handleSaveCustomPrompt,
+    handleGenerateWithExistingModel,
   };
 };
