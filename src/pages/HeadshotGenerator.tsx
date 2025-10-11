@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PhotoUpload } from '@/components/PhotoUpload';
 import PhotoStyleSelector from '@/components/PhotoStyleSelector';
 import GenerationOptions from '@/components/GenerationOptions';
@@ -28,11 +27,9 @@ const HeadshotGenerator = () => {
     generatedImages,
     allGeneratedImages,
     trainedModels,
-    selectedModelId,
     setSelectedStyle,
     setSelectedGender,
     setCustomPrompt,
-    setSelectedModelId,
     handlePhotosSelected,
     handleDownload,
     handleStartNew,
@@ -43,16 +40,20 @@ const HeadshotGenerator = () => {
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 'upload':
-        return <PhotoUpload onPhotosSelected={handlePhotosSelected} />;
-      
+        // Only show PhotoUpload if NO trained models exist
+        if (trainedModels.length === 0) {
+          return <PhotoUpload onPhotosSelected={handlePhotosSelected} />;
+        }
+        return null; // Model selection is shown in the main card above
+
       case 'training':
         return (
-          <GenerationProgress 
+          <GenerationProgress
             status="Training your AI model..."
             description="This usually takes 5-10 minutes. We're learning your unique features."
           />
         );
-      
+
       case 'generating':
         return (
           <div className="space-y-6">
@@ -65,16 +66,16 @@ const HeadshotGenerator = () => {
             )}
           </div>
         );
-      
+
       case 'completed':
         return (
-          <HeadshotGallery 
+          <HeadshotGallery
             images={generatedImages}
             onDownload={handleDownload}
             onStartNew={handleStartNew}
           />
         );
-      
+
       default:
         return null;
     }
@@ -145,43 +146,25 @@ const HeadshotGenerator = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Existing Model Selection */}
-                {trainedModels.length > 0 && (
-                  <div className="space-y-3 p-4 border rounded-lg bg-primary/5">
-                    <Label htmlFor="modelSelect" className="text-base font-semibold flex items-center gap-2">
-                      <Sparkles className="h-5 w-5 text-primary" />
-                      Use Existing Trained Model
-                    </Label>
-                    <div className="flex gap-3">
-                      <Select
-                        value={selectedModelId?.toString() || ''}
-                        onValueChange={(value) => setSelectedModelId(value ? parseInt(value) : null)}
-                      >
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Select a trained model..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {trainedModels.map((model) => (
-                            <SelectItem key={model.id} value={model.id.toString()}>
-                              {model.name} ({model.status})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        onClick={handleGenerateWithExistingModel}
-                        disabled={!selectedModelId || isProcessing}
-                        className="gap-2"
-                      >
-                        <Images className="h-4 w-4" />
-                        Generate
-                      </Button>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Generate new headshots using a previously trained model (skips training step).
+                {/* Generate Button - Using Default Model */}
+                <div className="space-y-4 p-6 border-2 border-primary rounded-lg bg-primary/5 text-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <Sparkles className="h-8 w-8 text-primary" />
+                    <h3 className="text-lg font-semibold">Generate Professional Headshots</h3>
+                    <p className="text-sm text-muted-foreground max-w-md">
+                      Using your pre-trained model "new Ru man" to generate high-quality professional headshots instantly.
                     </p>
                   </div>
-                )}
+                  <Button
+                    onClick={handleGenerateWithExistingModel}
+                    disabled={isProcessing}
+                    size="lg"
+                    className="gap-2 px-12 py-6 text-lg"
+                  >
+                    <Images className="h-6 w-6" />
+                    Generate Headshots Now
+                  </Button>
+                </div>
 
                 {/* Photo Style Selection */}
                 <PhotoStyleSelector

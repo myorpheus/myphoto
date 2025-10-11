@@ -28,9 +28,9 @@ export async function generateImageHandler(
     // Body is already parsed in index.ts, so just destructure it
     const { model_id, prompt, custom_prompt, num_images = 4, style = 'professional', gender = 'man', negative_prompt } = body;
 
-    if (!model_id || !prompt) {
+    if (!prompt) {
       return new Response(
-        JSON.stringify({ error: "Missing required parameters: model_id and prompt" }),
+        JSON.stringify({ error: "Missing required parameter: prompt" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -38,28 +38,16 @@ export async function generateImageHandler(
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    // Get model from database to get Astria model ID
-    const { data: model, error: modelError } = await supabase
-      .from("models")
-      .select("*")
-      .eq("id", model_id)
-      .eq("user_id", user.id)
-      .single();
+    // 🔑 CRITICAL: Use configured default tune_id instead of database lookup
+    // This bypasses the "Model not found" error and uses the pre-trained "new Ru man" model
+    const DEFAULT_TUNE_ID = Deno.env.get("DEFAULT_ASTRIA_TUNE_ID") || "2979897"; // Fallback tune_id
+    const astriaModelId = DEFAULT_TUNE_ID;
 
-    if (modelError || !model) {
-      console.error("❌ Model not found or access denied:", modelError);
-      return new Response(
-        JSON.stringify({ error: "Model not found or access denied" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    console.log(`✅ Using configured Astria tune_id: ${astriaModelId}`);
+    console.log(`👤 User: ${user.email || user.id}`);
 
-    if (model.status !== "trained") {
-      return new Response(
-        JSON.stringify({ error: "Model is not ready. Please wait for training to complete." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // Skip database model lookup - using configured default model instead
+    // Database lookup was causing "Model not found" errors (PGRST116)
 
     // Check user credits
     const { data: credits, error: creditsError } = await supabase
@@ -156,7 +144,7 @@ export async function generateImageHandler(
     console.log("ℹ️ Note: Flux models don't support negative prompts");
 
     // Call Astria API to generate images with nano banana model
-    const response = await fetch(`https://api.astria.ai/tunes/${model.astria_model_id}/prompts`, {
+    const response = await fetch(`https://api.astria.ai/tunes/${astriaModelId}/prompts`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${astriaApiKey}`,
@@ -210,8 +198,9 @@ export async function generateImageHandler(
     console.log("✅ Astria image generation started:", astriaData);
 
     // Create image records in database
+    // Note: model_id may be null since we're using configured default tune_id
     const imageRecords = Array.from({ length: num_images }, (_, i) => ({
-      model_id: model_id,
+      model_id: model_id || null, // Use null if no database model_id provided
       user_id: user.id,
       prompt: prompt,
       status: "generating",
