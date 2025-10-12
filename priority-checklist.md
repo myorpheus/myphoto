@@ -1,5 +1,58 @@
 # Priority Checklist
 
+## 🚨 CRITICAL P0: 'new Ru man' Model Integration - DEFAULT_ASTRIA_TUNE_ID Configuration (2025-10-12)
+
+**GOAL**: Configure and deploy the 'new Ru man' model (tune_id: 3401603) as the default for headshot generation
+**TUNE_ID**: https://www.astria.ai/tunes/3401603/ → `3401603`
+**STATUS**: ⚠️ IMMEDIATE CONFIGURATION REQUIRED
+**IMPACT**: Required for streamlined headshot generation with pre-trained model
+
+### ⚡ IMMEDIATE ACTION REQUIRED
+
+- [ ] **(P0) Set `DEFAULT_ASTRIA_TUNE_ID` in Supabase Secrets**
+    - [ ] Execute in terminal:
+        ```bash
+        supabase secrets set DEFAULT_ASTRIA_TUNE_ID="3401603"
+        ```
+    - [ ] Verify secret was set:
+        ```bash
+        supabase secrets list
+        ```
+    - [ ] Confirm `DEFAULT_ASTRIA_TUNE_ID` shows value `3401603`
+
+- [ ] **(P0) Deploy `generate-headshot` Edge Function with New Configuration**
+    - [ ] Navigate to project directory:
+        ```bash
+        cd /Users/dimaglinskii/Documents/GitHub/myphoto
+        ```
+    - [ ] Deploy edge function:
+        ```bash
+        supabase functions deploy generate-headshot --project-ref imzlzufdujhcbebibgpj
+        ```
+    - [ ] Note deployed version number
+
+- [ ] **(P0) Verify Deployment in Supabase Dashboard**
+    - [ ] Go to Supabase Dashboard → Functions → `generate-headshot`
+    - [ ] Confirm function is deployed and active
+    - [ ] Check version number matches deployed version
+
+- [ ] **(P0) End-to-End Testing with 'new Ru man' Model**
+    - [ ] Navigate to `/generate` page
+    - [ ] Click "Generate Headshots Now" button
+    - [ ] Check Supabase Function Logs for: `✅ Using configured Astria tune_id: 3401603`
+    - [ ] Verify no `PGRST116` or model access errors
+    - [ ] Confirm image generation starts successfully
+    - [ ] Verify generated images display correctly
+
+### Success Criteria
+- [ ] `DEFAULT_ASTRIA_TUNE_ID` = `3401603` set in Supabase Secrets
+- [ ] `generate-headshot` function deployed successfully
+- [ ] Logs confirm tune_id 3401603 is being used
+- [ ] No database lookup errors (model retrieved from environment)
+- [ ] Headshot generation works end-to-end
+
+---
+
 ## 🚨 CRITICAL P0: TrainModelHandler 500 Error - STILL FAILING (2025-10-08)
 
 **ERROR**: "Internal server error in trainModelHandler" - 500 from generate-headshot

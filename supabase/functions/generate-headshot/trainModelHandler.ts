@@ -57,6 +57,25 @@ export async function trainModelHandler(
       );
     }
 
+    // FEATURE: Data URL Validation - Ensure images have correct prefix for Astria API
+    // Astria API requires images to be full data URLs: data:image/jpeg;base64,... or data:image/png;base64,...
+    console.log("🔍 trainModelHandler: Validating data URL prefixes for all images...");
+    for (let i = 0; i < images.length; i++) {
+      const image = images[i];
+      if (!image.startsWith('data:image/') || !image.includes(';base64,')) {
+        console.error(`❌ trainModelHandler: Image ${i + 1} is not a valid data URL. Prefix: ${image.substring(0, 30)}`);
+        return new Response(
+          JSON.stringify({
+            error: `Image ${i + 1} is not a valid data URL. Images must start with 'data:image/' and include ';base64,'.`,
+            received_prefix: image.substring(0, 30),
+            expected_format: "data:image/jpeg;base64,... or data:image/png;base64,..."
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+    console.log("✅ trainModelHandler: All images have valid data URL prefixes");
+
     // Initialize Supabase client with service role
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 

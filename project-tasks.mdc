@@ -1779,9 +1779,122 @@ Result: Style prompt + custom lighting requirements
 #### ✅ CRITICAL BLOCKERS - RESOLVED
 1. **~~API Key Validation~~**: ✅ API key configured in Supabase secrets
 2. **~~Backend Proxy~~**: ✅ Edge functions implemented and integrated
-3. **~~Webhook Setup~~**: ✅ Webhook endpoint created and functional  
+3. **~~Webhook Setup~~**: ✅ Webhook endpoint created and functional
 4. **~~Service Layer~~**: ✅ All database methods enabled and working
 5. **~~Client Security~~**: ✅ Direct API calls replaced with secure edge functions
+
+#### 🎯 'new Ru man' Model Integration (Completed 2025-10-12)
+
+**Goal:** Integrate the 'new Ru man' model as the default for headshot generation, simplifying the user experience by removing the model selection dropdown.
+
+**Implementation:**
+
+- **Frontend:** Removed model selection dropdown from the `/generate` page. Added a single "Generate Headshots Now" button.
+- **Backend:** Modified the `generate-headshot` edge function to use the `DEFAULT_ASTRIA_TUNE_ID` environment variable to determine the model to use. Bypassed database lookup for model selection.
+- **Configuration:** Introduced the `DEFAULT_ASTRIA_TUNE_ID` environment variable in Supabase Secrets.
+- **Deployment:** Deployed updated frontend and `generate-headshot` edge function.
+
+**Key Changes:**
+
+- `src/hooks/useHeadshotGenerator.ts`: Modified to remove model selection logic.
+- `supabase/functions/generate-headshot/index.ts`: Updated to read `DEFAULT_ASTRIA_TUNE_ID` from environment variables.
+
+**Configuration Details:**
+
+- **Tune ID:** `3401603` (from https://www.astria.ai/tunes/3401603/)
+- **Environment Variable:** `DEFAULT_ASTRIA_TUNE_ID="3401603"`
+- **Set via CLI:** `supabase secrets set DEFAULT_ASTRIA_TUNE_ID="3401603"`
+
+**Verification:**
+
+- [ ] Verified `DEFAULT_ASTRIA_TUNE_ID` environment variable is set correctly
+- [ ] Verified `generate-headshot` edge function is deployed and active
+- [ ] Confirmed that clicking the "Generate Headshots Now" button triggers image generation using the 'new Ru man' model
+- [ ] Checked Supabase function logs to confirm the `tune_id` is being used and that no errors are occurring
+- [ ] Verified that generated headshots are displayed correctly in the application
+
+**Potential Issues to Monitor:**
+
+- Typos in `DEFAULT_ASTRIA_TUNE_ID` environment variable
+- Missing or incorrect `DEFAULT_ASTRIA_TUNE_ID` environment variable
+- Invalid `ASTRIA_API_KEY`
+- Astria API changes
+- Database connection issues (for other database operations)
+- Data URL Prefix incorrect for image uploads
+
+**Next Steps:**
+
+- Monitor logs for any errors during headshot generation
+- Consider adding a configuration option in the admin dashboard to allow easy selection of the `tune_id` (future enhancement)
+
+**Commits:** a33969c (Fix: Skip database model lookup and use configured default tune_id)
+
+---
+
+#### 🛡️ Data URL Validation for Image Uploads (Feature Added 2025-10-12)
+
+**Status**: ✅ IMPLEMENTED in `trainModelHandler.ts`
+
+**What the Feature Does:**
+
+The data URL validation feature inspects each image provided by the user before sending it to the Astria API for model training. It verifies that the image data is correctly formatted as a data URL, specifically checking for the presence of the correct prefix and encoding.
+
+**Why It's Important:**
+
+The Astria API requires images to be submitted as complete data URLs in the format `data:image/<format>;base64,<base64 encoded data>`. If the images are not in this format, the Astria API will return a `422 Unprocessable Entity` error. This validation step prevents these errors by ensuring that the image data conforms to the Astria API's requirements *before* a request is made, saving time and resources. Without this validation, users might upload images in incorrect formats, leading to failed training jobs and a poor user experience.
+
+**Validation Rules Enforced:**
+
+The feature enforces the following rules for each image in the `images` array:
+
+- **Prefix Check**: The image data must begin with the string `data:image/`. This confirms that the data is declared as an image.
+- **Encoding Check**: The image data must contain the string `;base64,`. This confirms that the image data is Base64 encoded. The `<format>` part of the prefix is not explicitly validated (e.g., `jpeg`, `png`), as the Astria API handles format detection internally.
+
+**Error Messages Users Will See:**
+
+If an image fails the validation, the user will receive an error message in the following format:
+
+```json
+{
+  "error": "Image <image_index> is not a valid data URL. Images must start with 'data:image/' and include ';base64,'.",
+  "received_prefix": "<first_30_characters_of_invalid_image_data>",
+  "expected_format": "data:image/jpeg;base64,... or data:image/png;base64,..."
+}
+```
+
+**Example Error Scenario:**
+
+If the second image in the `images` array was simply a URL like `"https://example.com/image.jpg"`, the error message would be:
+
+```json
+{
+  "error": "Image 2 is not a valid data URL. Images must start with 'data:image/' and include ';base64,'.",
+  "received_prefix": "https://example.com/image.jpg",
+  "expected_format": "data:image/jpeg;base64,... or data:image/png;base64,..."
+}
+```
+
+**How This Prevents Common Integration Issues:**
+
+This validation directly addresses the common issue of users providing incorrect image formats to the Astria API. Specifically:
+
+- **Prevents URL uploads**: Users might inadvertently provide direct URLs to images instead of data URLs. The prefix and encoding checks explicitly reject these.
+- **Prevents missing encoding**: Users might provide image data without Base64 encoding, or without the necessary `data:image/` prefix. The checks ensure these are present.
+- **Early error detection**: The validation happens *before* sending the request to the Astria API. This provides immediate feedback to the user, allowing them to correct the issue quickly and avoid unnecessary API calls and potential rate limiting.
+- **Improved User Experience**: By providing clear and informative error messages, the feature guides users towards providing the correct image format, leading to a smoother and more successful model training experience.
+
+**Implementation Details:**
+
+- **File**: `supabase/functions/generate-headshot/trainModelHandler.ts`
+- **Lines**: 60-77
+- **Validation Logic**: Iterates through all images, checks prefix and encoding, returns 400 error if invalid
+
+**Related Files:**
+
+- `src/utils/file-utils.ts` - Ensures `fileToBase64` returns full data URL with prefix
+- `src/services/headshotGeneratorService.ts` - Uses FileReader to maintain data URL format
+
+---
 
 #### ✅ ASTRIA EXISTING MODEL INTEGRATION - COMPLETED
 1. ✅ **Edge function enhanced** - Added `list_models` action to fetch existing Astria models
