@@ -1,13 +1,1 @@
-project_id = "imzlzufdujhcbebibgpj"
-
-[functions.generate-headshot]
-verify_jwt = true
-
-[functions.astria-webhook]
-verify_jwt = false
-
-[functions.image-lifecycle]
-verify_jwt = false
-
-[functions.scheduled-cleanup]
-verify_jwt = false
+project_id = "phydoessspnvnspctjnd"
