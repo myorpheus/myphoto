@@ -1,5 +1,77 @@
 # Project Tasks & Solutions
 
+## COMPLETED - 2026-02-26
+
+### Feature: Multi-Language Support (EN/RU/ZH) - i18n Implementation
+**Status**: ✅ COMPLETED (DB migration pending - Supabase connection timeout)
+**Date**: 2026-02-26
+
+**What was implemented**:
+1. **i18n Context** (`src/contexts/LanguageContext.tsx`) - React Context with `useTranslation()` hook
+2. **Translation files** (`src/i18n/translations/en.ts`, `ru.ts`, `zh.ts`) - Complete UI translations for 3 languages
+3. **LanguageSelector component** (`src/components/LanguageSelector.tsx`) - Flag-based dropdown
+4. **All pages updated**: Index, Home, Login, Gallery, Overview, HeadshotGenerator, AdminDashboard, TrainModel, NotFound, Footer
+
+**Architecture**:
+- `LanguageProvider` wraps the app in `App.tsx`
+- Each page imports `useTranslation()` and `LanguageSelector`
+- Translations are keyed by dot-notation (e.g., `landing.hero.title1`)
+- `t()` function supports parameter interpolation: `t("footer.copyright", { year: "2026" })`
+
+**Caching Strategy**:
+- localStorage key: `headshots-ai-language` (immediate, no DB round-trip)
+- DB table: `user_preferences` (cross-device persistence for logged-in users)
+- Fallback: `navigator.language` → English
+
+**DB Migration PENDING** (Supabase connection timed out):
+```sql
+CREATE TABLE IF NOT EXISTS public.user_preferences (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL UNIQUE,
+  language TEXT NOT NULL DEFAULT 'en' CHECK (language IN ('en', 'ru', 'zh')),
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own preferences" ON public.user_preferences FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own preferences" ON public.user_preferences FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own preferences" ON public.user_preferences FOR UPDATE USING (auth.uid() = user_id);
+```
+
+**Files Created**:
+- `src/contexts/LanguageContext.tsx` (93 lines)
+- `src/i18n/translations/en.ts` (123 lines)
+- `src/i18n/translations/ru.ts` (120 lines)
+- `src/i18n/translations/zh.ts` (120 lines)
+- `src/i18n/translations/index.ts` (25 lines)
+- `src/components/LanguageSelector.tsx` (40 lines)
+
+**Files Modified**:
+- `src/App.tsx` - Added LanguageProvider
+- `src/pages/Index.tsx` - i18n + LanguageSelector
+- `src/pages/Home.tsx` - i18n + LanguageSelector
+- `src/pages/Login.tsx` - i18n + LanguageSelector
+- `src/pages/Gallery.tsx` - i18n + LanguageSelector
+- `src/pages/Overview.tsx` - i18n + LanguageSelector
+- `src/pages/HeadshotGenerator.tsx` - i18n + LanguageSelector
+- `src/pages/AdminDashboard.tsx` - i18n + LanguageSelector
+- `src/pages/TrainModel.tsx` - i18n + LanguageSelector
+- `src/pages/NotFound.tsx` - i18n + LanguageSelector
+- `src/components/Footer.tsx` - i18n
+- `priority-checklist.md` - Added plan
+
+**Key Patterns for Future Reference**:
+- Use `useTranslation()` hook in any component needing translations
+- Add new keys to all 3 translation files simultaneously
+- Use `(supabase as any).from('user_preferences')` until types are regenerated
+- LanguageSelector uses shadcn DropdownMenu for consistency
+
+**Known Issues**:
+- DB table `user_preferences` not yet created (Supabase timeout) - language persists via localStorage only
+- Supabase types don't include `user_preferences` yet - using `as any` cast
+
+---
+
 ## COMPLETED FIXES - 2025-10-08
 
 ### Fix #0: Generate-Headshot Edge Function NOT DEPLOYED (CRITICAL - ROOT CAUSE)
