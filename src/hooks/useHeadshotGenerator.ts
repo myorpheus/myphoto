@@ -34,6 +34,7 @@ interface UseHeadshotGeneratorReturn {
   handleStartNew: () => void;
   handleSaveCustomPrompt: () => Promise<void>;
   handleGenerateWithExistingModel: () => Promise<void>;
+  handleGenerateWithGemini: () => Promise<void>;
 }
 
 export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
@@ -395,6 +396,69 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
     }
   };
 
+
+  const handleGenerateWithGemini = async () => {
+    if (userCredits < 1) {
+      toast({
+        title: 'Insufficient Credits',
+        description: 'You need at least 1 credit to generate headshots with Gemini.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    setCurrentStep('generating');
+
+    try {
+      console.log('🤖 Generating with Gemini AI enhancement...');
+      
+      const accessToken = await headshotGeneratorService.getAccessToken();
+      
+      // Use default model with Gemini enhancement (modelId=0 triggers default)
+      const generateResponse = await headshotGeneratorService.generateImage({
+        modelId: 0,
+        prompt: 'professional headshot, business attire, clean background, high quality, studio lighting, corporate portrait',
+        customPrompt: customPrompt || undefined,
+        style: selectedStyle,
+        gender: selectedGender,
+        numImages: 4,
+        accessToken,
+      });
+
+      if (!generateResponse.success) {
+        throw new Error(generateResponse.error || 'Failed to generate images');
+      }
+
+      console.log('🤖 Gemini generation started...');
+      
+      // Poll for images (reuse existing model ID logic)
+      const completedImages = await pollImageCompletion(0);
+      
+      setGeneratedImages(completedImages);
+      setCurrentStep('completed');
+      setIsProcessing(false);
+
+      toast({
+        title: '🤖 Headshots Generated!',
+        description: `Successfully generated ${completedImages.length} headshots with Gemini AI.`,
+        variant: 'default',
+      });
+
+      console.log('✅ Gemini headshots generation completed:', completedImages.length);
+
+    } catch (error) {
+      console.error('Error generating with Gemini:', error);
+      toast({
+        title: 'Generation Failed',
+        description: 'Failed to generate images with Gemini. Please try again.',
+        variant: 'destructive',
+      });
+      setCurrentStep('upload');
+      setIsProcessing(false);
+    }
+  };
+
   return {
     currentStep,
     userCredits,
@@ -417,5 +481,6 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
     handleStartNew,
     handleSaveCustomPrompt,
     handleGenerateWithExistingModel,
+    handleGenerateWithGemini,
   };
 };

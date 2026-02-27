@@ -26,6 +26,7 @@ const HeadshotGenerator = () => {
     setSelectedStyle, setSelectedGender, setCustomPrompt,
     handlePhotosSelected, handleDownload, handleStartNew,
     handleSaveCustomPrompt, handleGenerateWithExistingModel,
+    handleGenerateWithGemini,
   } = useHeadshotGenerator();
 
   const renderCurrentStep = () => {
@@ -100,10 +101,16 @@ const HeadshotGenerator = () => {
                     <h3 className="text-lg font-semibold">{t("generator.generateTitle")}</h3>
                     <p className="text-sm text-muted-foreground max-w-md">{t("generator.generateDesc")}</p>
                   </div>
-                  <Button onClick={handleGenerateWithExistingModel} disabled={isProcessing} size="lg" className="gap-2 px-12 py-6 text-lg">
-                    <Images className="h-6 w-6" />
-                    {t("generator.generateNow")}
-                  </Button>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <Button onClick={handleGenerateWithExistingModel} disabled={isProcessing} size="lg" className="gap-2 px-8 py-6 text-lg">
+                      <Images className="h-6 w-6" />
+                      {t("generator.generateNow")}
+                    </Button>
+                    <Button onClick={handleGenerateWithGemini} disabled={isProcessing} size="lg" variant="outline" className="gap-2 px-8 py-6 text-lg">
+                      <Sparkles className="h-6 w-6" />
+                      Generate with Gemini
+                    </Button>
+                  </div>
                 </div>
 
                 <PhotoStyleSelector selectedStyle={selectedStyle} setSelectedStyle={setSelectedStyle} selectedGender={selectedGender} setSelectedGender={setSelectedGender} />
