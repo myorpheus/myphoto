@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import Overview from "./pages/Overview";
 import TrainModel from "./pages/TrainModel";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminOGSettings from "./pages/AdminOGSettings";
 import HeadshotGenerator from "./pages/HeadshotGenerator";
 import Gallery from "./pages/Gallery";
 import AdminRoute from "./components/admin/AdminRoute";
@@ -57,6 +58,14 @@ const App = () => (
               element={
                 <AdminRoute>
                   <TrainModel />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin-og" 
+              element={
+                <AdminRoute>
+                  <AdminOGSettings />
                 </AdminRoute>
               } 
             />

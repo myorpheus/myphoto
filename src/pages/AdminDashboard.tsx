@@ -93,6 +93,22 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
 
+            <Card className="group cursor-pointer hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 border-border hover:border-primary/50">
+              <CardHeader>
+                <div className="w-14 h-14 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <SettingsIcon className="h-7 w-7 text-green-600 dark:text-green-400" />
+                </div>
+                <CardTitle className="group-hover:text-primary transition-colors">OG Image Settings</CardTitle>
+                <CardDescription>Manage Open Graph image generation settings</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="ghost" className="w-full justify-between group/btn hover:bg-primary/10" onClick={() => navigate('/admin-og')}>
+                  {t("admin.accessTool")}
+                  <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                </Button>
+              </CardContent>
+            </Card>
+
             <Card className="opacity-50 border-dashed">
               <CardHeader>
                 <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center mb-4">
