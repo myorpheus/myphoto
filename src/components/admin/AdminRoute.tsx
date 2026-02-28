@@ -51,7 +51,7 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
           description: 'You do not have permission to access admin features.',
           variant: 'destructive',
         });
-        navigate('/overview');
+        navigate('/home');
         return;
       }
 
@@ -64,7 +64,7 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
         description: 'Unable to verify admin permissions. Please try again.',
         variant: 'destructive',
       });
-      navigate('/overview');
+      navigate('/home');
     } finally {
       setIsLoading(false);
     }
