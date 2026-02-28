@@ -1,7 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Camera, Sparkles, Zap, Shield, ArrowRight } from "lucide-react";
+import { Camera, Sparkles, Zap, Shield, ArrowRight, Menu, X } from "lucide-react";
 import Footer from "@/components/Footer";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -9,6 +9,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { supabaseService } from "@/services/supabase";
 
 const Index = () => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
 
