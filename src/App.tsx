@@ -30,9 +30,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/home" element={<Home />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/overview" element={<Overview />} />
+            <Route path="/home" element={<Overview />} />
             <Route path="/generate" element={
               <AuthRoute>
                 <HeadshotGenerator />

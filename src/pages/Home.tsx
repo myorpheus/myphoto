@@ -66,7 +66,7 @@ const Home = () => {
       title: t("home.viewGallery"),
       description: t("home.viewGalleryDesc"),
       icon: Image,
-      action: () => navigate('/overview'),
+      action: () => navigate('/home'),
       gradient: "from-primary/80 to-accent/80",
     }
   ];
@@ -190,7 +190,7 @@ const Home = () => {
               <CardDescription>{t("home.managePreferences")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/overview')}>
+              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/home')}>
                 <Settings className="mr-2 h-4 w-4" />
                 {t("home.viewDashboard")}
               </Button>

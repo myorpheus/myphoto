@@ -55,7 +55,7 @@ const HeadshotGenerator = () => {
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate('/overview')} disabled={isProcessing}>
+            <Button variant="ghost" onClick={() => navigate('/home')} disabled={isProcessing}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t("common.back")}
             </Button>

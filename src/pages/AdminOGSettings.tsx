@@ -51,7 +51,7 @@ const AdminOGSettings = () => {
           description: 'You do not have permission to access this page',
           variant: 'destructive'
         });
-        navigate('/overview');
+        navigate('/home');
       } else {
         loadSettings();
       }
@@ -62,7 +62,7 @@ const AdminOGSettings = () => {
         description: 'Failed to verify permissions',
         variant: 'destructive'
       });
-      navigate('/overview');
+      navigate('/home');
     } finally {
       setIsLoading(false);
     }
