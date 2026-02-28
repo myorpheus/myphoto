@@ -109,7 +109,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ setActiveTab }) => {
             title: 'Account created successfully!',
             description: 'Welcome to Headshots AI. You can now start creating professional headshots.',
           });
-          navigate('/home', { replace: true });
+          navigate('/overview', { replace: true });
         }
       } else {
         logSignupAttempt({

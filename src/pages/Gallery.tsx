@@ -8,6 +8,8 @@ import { useTranslation } from '@/contexts/LanguageContext';
 import FilterBar from '@/components/FilterBar';
 import ImageGrid from '@/components/ImageGrid';
 
+const TEST_IMAGE = '/test_nano_banana.jpg';
+
 const Gallery = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -50,6 +52,20 @@ const Gallery = () => {
       </header>
 
       <main className="container py-8">
+        {/* Test Image Display */}
+        <Card className="mb-6">
+          <CardContent className="pt-6">
+            <h3 className="text-lg font-semibold mb-4">Test Image</h3>
+            <div className="flex justify-center">
+              <img 
+                src={TEST_IMAGE} 
+                alt="Test Nano Banana" 
+                className="max-w-md rounded-lg shadow-lg"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         {pendingImages.length > 0 && (
           <Card className="mb-6">
             <CardContent className="pt-6">
