@@ -15,6 +15,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import HeadshotGenerator from "./pages/HeadshotGenerator";
 import Gallery from "./pages/Gallery";
 import AdminRoute from "./components/admin/AdminRoute";
+import AuthRoute from "./components/AuthRoute";
 
 const queryClient = new QueryClient();
 
@@ -31,8 +32,16 @@ const App = () => (
             <Route path="/home" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/overview" element={<Overview />} />
-            <Route path="/generate" element={<HeadshotGenerator />} />
-            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/generate" element={
+              <AuthRoute>
+                <HeadshotGenerator />
+              </AuthRoute>
+            } />
+            <Route path="/gallery" element={
+              <AuthRoute>
+                <Gallery />
+              </AuthRoute>
+            } />
             
             {/* Admin-only routes - protected with AdminRoute */}
             <Route 
@@ -56,9 +65,9 @@ const App = () => (
             <Route 
               path="/train" 
               element={
-                <AdminRoute>
+                <AuthRoute>
                   <TrainModel />
-                </AdminRoute>
+                </AuthRoute>
               } 
             />
             
