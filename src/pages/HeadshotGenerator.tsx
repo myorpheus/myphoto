@@ -65,8 +65,6 @@ const HeadshotGenerator = () => {
               <Images className="w-4 h-4 mr-2" />
               {t("common.gallery")}
             </Button>
-              {t("generator.testConfig")}
-            </Button>
             <LanguageSelector />
             <Card className="px-4 py-2">
               <div className="flex items-center gap-2">
