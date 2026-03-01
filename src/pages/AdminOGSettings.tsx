@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { supabaseService } from '@/services/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save, Image, Link, Type, FileText, Upload, X, Globe } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
@@ -67,15 +68,29 @@ const AdminOGSettings = () => {
     } finally { setIsLoading(false); }
   };
 
-  const loadSettings = () => {
+  const loadSettings = async () => {
     try {
+      // Try Supabase first
+      const { data, error } = await (supabase
+        .from('site_settings' as any)
+        .select('value')
+        .eq('key', 'og_branding')
+        .maybeSingle() as any);
+
+      if (!error && data?.value) {
+        const parsed = data.value as OGSettings;
+        setSettings(prev => ({ ...prev, ...parsed }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+        if (parsed.ogImage?.startsWith('data:')) setImageSource('upload');
+        if (parsed.favicon?.startsWith('data:')) setFaviconSource('upload');
+        return;
+      }
+
+      // Fallback to localStorage
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        setSettings(prev => {
-          const merged = { ...prev, ...parsed };
-          return merged;
-        });
+        setSettings(prev => ({ ...prev, ...parsed }));
         if (parsed.ogImage?.startsWith('data:')) setImageSource('upload');
         if (parsed.favicon?.startsWith('data:')) setFaviconSource('upload');
       }
@@ -103,12 +118,24 @@ const AdminOGSettings = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const user = await supabaseService.getCurrentUser();
+      const { error } = await supabase
+        .from('site_settings' as any)
+        .upsert({
+          key: 'og_branding',
+          value: settings as any,
+          updated_at: new Date().toISOString(),
+          updated_by: user?.id || null,
+        }, { onConflict: 'key' });
+
+      if (error) throw error;
+
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
       applyOGMetaTags(settings);
-      toast({ title: 'Settings Saved', description: 'OG & Favicon settings have been saved and applied!' });
+      toast({ title: 'Settings Saved ✅', description: 'OG & Favicon settings saved to Supabase and applied!' });
     } catch (error) {
       console.error('Error saving settings:', error);
-      toast({ title: 'Error', description: 'Failed to save settings', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to save settings to database', variant: 'destructive' });
     } finally { setIsSaving(false); }
   };
 
@@ -158,7 +185,7 @@ const AdminOGSettings = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Image className="h-5 w-5" /> OG & Branding Settings</CardTitle>
-          <CardDescription>Configure Open Graph meta tags and favicon. Saved to localStorage.</CardDescription>
+          <CardDescription>Configure Open Graph meta tags and favicon. Saved to Supabase.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* OG Title */}
