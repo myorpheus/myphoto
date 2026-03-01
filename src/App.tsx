@@ -10,6 +10,8 @@ import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Overview from "./pages/Overview";
+import Dashboard from "./pages/Dashboard";
+import AdminPhotos from "./pages/AdminPhotos";
 import TrainModel from "./pages/TrainModel";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminOGSettings from "./pages/AdminOGSettings";
@@ -31,7 +33,11 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/home" element={<Overview />} />
+            <Route path="/home" element={
+              <AuthRoute>
+                <Dashboard />
+              </AuthRoute>
+            } />
             <Route path="/generate" element={
               <AuthRoute>
                 <HeadshotGenerator />
@@ -65,6 +71,14 @@ const App = () => (
               element={
                 <AdminRoute>
                   <AdminOGSettings />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/photos" 
+              element={
+                <AdminRoute>
+                  <AdminPhotos />
                 </AdminRoute>
               } 
             />
