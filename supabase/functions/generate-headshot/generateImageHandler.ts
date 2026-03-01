@@ -41,17 +41,36 @@ export async function generateImageHandler(
     console.log(`✅ Using Gemini for image generation`);
     console.log(`👤 User: ${user.email || user.id}`);
 
-    // Check user credits
-    const { data: credits, error: creditsError } = await supabase
-      .from("credits")
+    // Check user credits - auto-create if not exists
+    let { data: credits, error: creditsError } = await supabase
+      .from("user_credits")
       .select("credits")
       .eq("user_id", user.id)
       .single();
 
+    if (creditsError && creditsError.code === 'PGRST116') {
+      // No credits row — create one with default 10 credits
+      console.log("ℹ️ No credits row found, creating with 10 default credits");
+      const { data: newCredits, error: insertError } = await supabase
+        .from("user_credits")
+        .insert({ user_id: user.id, credits: 10 })
+        .select("credits")
+        .single();
+      if (insertError) {
+        console.error("❌ Failed to create credits:", insertError);
+        return new Response(
+          JSON.stringify({ error: "Failed to initialize credits" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      credits = newCredits;
+      creditsError = null;
+    }
+
     if (creditsError || !credits || credits.credits < num_images) {
-      console.error("❌ Insufficient credits:", creditsError);
+      console.error("❌ Insufficient credits:", creditsError || `Have ${credits?.credits || 0}, need ${num_images}`);
       return new Response(
-        JSON.stringify({ error: "Insufficient credits" }),
+        JSON.stringify({ error: "Insufficient credits", credits_available: credits?.credits || 0 }),
         { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -127,8 +146,8 @@ export async function generateImageHandler(
       model_id: string | null;
       user_id: string;
       prompt: string;
+      url: string;
       status: string;
-      gemini_image_id?: string;
     }> = [];
 
     // Generate each image individually (Gemini API generates one at a time)
@@ -194,8 +213,8 @@ export async function generateImageHandler(
           model_id: model_id || null,
           user_id: user.id,
           prompt: prompt,
+          url: imageUrl,
           status: "completed",
-          gemini_image_id: `gemini_${Date.now()}_${i}`
         });
       } else {
         // No image in response - may need to handle differently
@@ -206,6 +225,7 @@ export async function generateImageHandler(
           model_id: model_id || null,
           user_id: user.id,
           prompt: prompt,
+          url: "",
           status: "failed"
         });
       }
@@ -225,7 +245,7 @@ export async function generateImageHandler(
 
     // Deduct credits
     const { error: creditUpdateError } = await supabase
-      .from("credits")
+      .from("user_credits")
       .update({ credits: credits.credits - num_images })
       .eq("user_id", user.id);
 
