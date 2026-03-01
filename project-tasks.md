@@ -26,3 +26,10 @@
 - Tables `credits`, `images`, `models`, `samples` still need to be created in Supabase for full functionality
 - The `profiles` table is missing the `custom_astria_prompt` column
 - All components remain under 350 lines
+
+### 5. OG Image Upload Support
+- Added file upload option to Admin OG Settings page (`AdminOGSettings.tsx`)
+- Users can toggle between URL input and file upload for the OG image
+- Uploaded images stored as data URLs in localStorage (no storage bucket needed)
+- Includes file validation (images only, max 5MB), preview with remove button
+- Component stays under 350 lines

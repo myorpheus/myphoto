@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { supabaseService } from '@/services/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Image, Link, Type, FileText } from 'lucide-react';
+import { ArrowLeft, Save, Image, Link, Type, FileText, Upload, X } from 'lucide-react';
 
 const STORAGE_KEY = 'admin_og_settings';
 
@@ -21,9 +21,11 @@ interface OGSettings {
 const AdminOGSettings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [imageSource, setImageSource] = useState<'url' | 'upload'>('url');
   const [settings, setSettings] = useState<OGSettings>({
     ogTitle: '',
     ogDescription: '',
@@ -72,7 +74,11 @@ const AdminOGSettings = () => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        setSettings(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        setSettings(parsed);
+        if (parsed.ogImage?.startsWith('data:')) {
+          setImageSource('upload');
+        }
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -101,6 +107,33 @@ const AdminOGSettings = () => {
 
   const handleChange = (field: keyof OGSettings, value: string) => {
     setSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Invalid file', description: 'Please upload an image file', variant: 'destructive' });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Max 5MB allowed', variant: 'destructive' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        handleChange('ogImage', reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    handleChange('ogImage', '');
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   if (isLoading) {
@@ -172,21 +205,76 @@ const AdminOGSettings = () => {
             </p>
           </div>
 
-          {/* OG Image URL */}
+          {/* OG Image - URL or Upload */}
           <div className="space-y-2">
-            <Label htmlFor="ogImage" className="flex items-center gap-2">
+            <Label className="flex items-center gap-2">
               <Image className="h-4 w-4" />
-              OG Image URL
+              OG Image
             </Label>
-            <Input
-              id="ogImage"
-              type="url"
-              placeholder="https://example.com/image.jpg"
-              value={settings.ogImage}
-              onChange={(e) => handleChange('ogImage', e.target.value)}
-            />
+            <div className="flex gap-2 mb-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={imageSource === 'url' ? 'default' : 'outline'}
+                onClick={() => { setImageSource('url'); clearImage(); }}
+              >
+                <Link className="mr-1 h-3 w-3" /> URL
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={imageSource === 'upload' ? 'default' : 'outline'}
+                onClick={() => { setImageSource('upload'); clearImage(); }}
+              >
+                <Upload className="mr-1 h-3 w-3" /> Upload
+              </Button>
+            </div>
+
+            {imageSource === 'url' ? (
+              <Input
+                id="ogImage"
+                type="url"
+                placeholder="https://example.com/image.jpg"
+                value={settings.ogImage}
+                onChange={(e) => handleChange('ogImage', e.target.value)}
+              />
+            ) : (
+              <div className="space-y-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                {settings.ogImage ? (
+                  <div className="relative rounded-md border border-border overflow-hidden">
+                    <img src={settings.ogImage} alt="OG Upload" className="w-full max-h-48 object-cover" />
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="destructive"
+                      className="absolute top-2 right-2 h-7 w-7"
+                      onClick={clearImage}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-24 border-dashed"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="mr-2 h-5 w-5" />
+                    Click to upload image (max 5MB)
+                  </Button>
+                )}
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">
-              URL to the image that appears when your site is shared (recommended: 1200x630px)
+              Recommended: 1200×630px. Upload or paste a URL.
             </p>
           </div>
 
