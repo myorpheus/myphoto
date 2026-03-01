@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { completeSupabaseService } from '@/services/supabase-complete';
-import { Camera, Image, Shield, LogOut, Sparkles } from 'lucide-react';
+import { Camera, Image, Shield, LogOut, Sparkles, Crown, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 
 interface NavCard {
@@ -18,6 +19,7 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [userEmail, setUserEmail] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userRoles, setUserRoles] = useState<string[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,10 +33,18 @@ const Dashboard = () => {
       return;
     }
     setUserEmail(user.email || '');
-    const admin = await completeSupabaseService.isAdmin(user.id);
+    const roles = await completeSupabaseService.getUserRoles(user.id);
+    setUserRoles(roles);
+    const admin = roles.includes('admin') || roles.includes('super_admin');
     setIsAdmin(admin);
     setIsLoading(false);
   };
+
+  const primaryRole = userRoles.includes('super_admin')
+    ? 'Super Admin'
+    : userRoles.includes('admin')
+    ? 'Admin'
+    : userRoles[0] || 'User';
 
   const handleSignOut = async () => {
     await completeSupabaseService.signOut();
@@ -92,9 +102,15 @@ const Dashboard = () => {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground hidden sm:block">
-              {userEmail}
-            </span>
+            <div className="flex items-center gap-2 hidden sm:flex">
+              <span className="text-sm text-muted-foreground">
+                {userEmail}
+              </span>
+              <Badge variant={isAdmin ? 'default' : 'secondary'} className="flex items-center gap-1 text-xs">
+                {isAdmin ? <Crown className="h-3 w-3" /> : <User className="h-3 w-3" />}
+                {primaryRole}
+              </Badge>
+            </div>
             <Button
               variant="ghost"
               size="sm"
