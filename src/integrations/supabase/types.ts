@@ -59,6 +59,57 @@ export type Database = {
         }
         Relationships: []
       }
+      images: {
+        Row: {
+          created_at: string | null
+          id: string
+          prompt: string | null
+          url: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          prompt?: string | null
+          url?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          prompt?: string | null
+          url?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      models: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           appsource: string | null
@@ -89,6 +140,38 @@ export type Database = {
         }
         Relationships: []
       }
+      samples: {
+        Row: {
+          created_at: string | null
+          id: string
+          model_id: string | null
+          url: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          model_id?: string | null
+          url?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          model_id?: string | null
+          url?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "samples_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schema_migrations: {
         Row: {
           executed_at: string | null
@@ -107,6 +190,30 @@ export type Database = {
           id?: number
           name?: string
           version?: string
+        }
+        Relationships: []
+      }
+      user_credits: {
+        Row: {
+          created_at: string | null
+          credits: number | null
+          id: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          credits?: number | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          credits?: number | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
