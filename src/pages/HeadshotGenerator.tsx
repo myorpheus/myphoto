@@ -13,7 +13,6 @@ import { LanguageSelector } from '@/components/LanguageSelector';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { useHeadshotGenerator } from '@/hooks/useHeadshotGenerator';
-import { testConfiguration } from '@/utils/headshotDebug';
 import { ArrowLeft, Crown, Coins, Images, Save, Sparkles } from 'lucide-react';
 
 const HeadshotGenerator = () => {
@@ -66,7 +65,6 @@ const HeadshotGenerator = () => {
               <Images className="w-4 h-4 mr-2" />
               {t("common.gallery")}
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => testConfiguration(toast, navigate)} disabled={isProcessing} className="text-xs">
               {t("generator.testConfig")}
             </Button>
             <LanguageSelector />
