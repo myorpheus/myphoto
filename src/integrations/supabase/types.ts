@@ -14,6 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
+      commission_settings: {
+        Row: {
+          created_at: string | null
+          id: number
+          rate: number
+          updated_at: string | null
+          user_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          rate?: number
+          updated_at?: string | null
+          user_id: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          rate?: number
+          updated_at?: string | null
+          user_id?: number
+        }
+        Relationships: []
+      }
+      feature_flags: {
+        Row: {
+          created_at: string | null
+          enabled: boolean
+          id: number
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          enabled?: boolean
+          id?: number
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          enabled?: boolean
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          appsource: string | null
+          avatar_url: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          appsource?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          appsource?: string | null
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
+      schema_migrations: {
+        Row: {
+          executed_at: string | null
+          id: number
+          name: string
+          version: string
+        }
+        Insert: {
+          executed_at?: string | null
+          id?: number
+          name: string
+          version: string
+        }
+        Update: {
+          executed_at?: string | null
+          id?: number
+          name?: string
+          version?: string
+        }
+        Relationships: []
+      }
       user_preferences: {
         Row: {
           created_at: string | null
@@ -35,6 +131,27 @@ export type Database = {
           language?: string
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: number
+          role: string
+          user_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          role: string
+          user_id: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          role?: string
+          user_id?: number
         }
         Relationships: []
       }
