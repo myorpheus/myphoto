@@ -30,24 +30,39 @@ export class UserService {
 
   // User Management - ADMIN ONLY
   async getAllUsers(): Promise<any[]> {
-    const { data, error } = await supabase
+    // Get profiles with their roles
+    const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
       .select(`
         id,
-        email,
+        full_name,
+        username,
+        avatar_url,
         created_at,
-        updated_at,
-        appsource,
-        user_roles!inner(role)
+        appsource
       `)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching all users:', error);
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
       throw new Error('Failed to fetch users');
     }
 
-    return data || [];
+    if (!profiles || profiles.length === 0) return [];
+
+    // Get all roles (admin can see all via RLS policy)
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('user_id, role');
+
+    // Merge roles into profiles
+    return profiles.map(profile => ({
+      ...profile,
+      email: profile.full_name || profile.username || profile.id,
+      user_roles: (roles || [])
+        .filter(r => r.user_id === profile.id)
+        .map(r => ({ role: r.role })),
+    }));
   }
 
   async assignRole(userId: string, role: string): Promise<boolean> {
