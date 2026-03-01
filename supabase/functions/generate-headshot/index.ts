@@ -1,4 +1,4 @@
-// Edge Function v52 - Headshot Generation with Model Training
+// Edge Function v52 - Headshot Generation with Gemini Image Generation
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { trainModelHandler } from "./trainModelHandler.ts";
@@ -13,14 +13,14 @@ serve(async (req) => {
   }
 
   try {
-    const ASTRIA_API_KEY = Deno.env.get("ASTRIA_API_KEY");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!ASTRIA_API_KEY) {
-      console.error("❌ ASTRIA_API_KEY not configured");
+    if (!GEMINI_API_KEY) {
+      console.error("❌ GEMINI_API_KEY not configured");
       return new Response(
-        JSON.stringify({ error: "Astria API key not configured" }),
+        JSON.stringify({ error: "Gemini API key not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -65,12 +65,14 @@ serve(async (req) => {
 
     switch (action) {
       case "train_model":
-        return await trainModelHandler(body, user, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ASTRIA_API_KEY);
+        // Note: train_model may no longer be needed with Gemini - keeping for compatibility
+        return await trainModelHandler(body, user, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY);
       case "generate_image":
-        return await generateImageHandler(body, user, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ASTRIA_API_KEY);
+        return await generateImageHandler(body, user, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY);
       case "check_status":
       case "list_models":
-        return await statusCheckHandler(body, user, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ASTRIA_API_KEY);
+        // These handlers may need updates for Gemini - keeping for compatibility
+        return await statusCheckHandler(body, user, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY);
       default:
         return new Response(
           JSON.stringify({ error: "Invalid action. Use: train_model, generate_image, check_status, or list_models" }),

@@ -22,7 +22,7 @@ export async function generateImageHandler(
   user: User,
   supabaseUrl: string,
   supabaseServiceRoleKey: string,
-  astriaApiKey: string,
+  geminiApiKey: string,
 ): Promise<Response> {
   try {
     // Body is already parsed in index.ts, so just destructure it
@@ -38,16 +38,8 @@ export async function generateImageHandler(
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    // 🔑 CRITICAL: Use configured default tune_id instead of database lookup
-    // This bypasses the "Model not found" error and uses the pre-trained "new Ru man" model
-    const DEFAULT_TUNE_ID = Deno.env.get("DEFAULT_ASTRIA_TUNE_ID") || "2979897"; // Fallback tune_id
-    const astriaModelId = DEFAULT_TUNE_ID;
-
-    console.log(`✅ Using configured Astria tune_id: ${astriaModelId}`);
+    console.log(`✅ Using Gemini for image generation`);
     console.log(`👤 User: ${user.email || user.id}`);
-
-    // Skip database model lookup - using configured default model instead
-    // Database lookup was causing "Model not found" errors (PGRST116)
 
     // Check user credits
     const { data: credits, error: creditsError } = await supabase
@@ -64,7 +56,7 @@ export async function generateImageHandler(
       );
     }
 
-    // Generate style-specific prompt and negative prompt optimized for nano banana
+    // Generate style-specific prompt optimized for Gemini image generation
     const styleConfigs = {
       professional: {
         prompt: "professional, corporate headshot, full face frontal only, business attire, clean background, studio lighting, high resolution, sharp focus, professional photography, executive portrait",
@@ -88,25 +80,13 @@ export async function generateImageHandler(
 
     let enhancedPrompt = prompt;
 
-    // NOTE: Flux models don't support negative prompts, so this code is commented out
-    // If you switch to a non-Flux model, you can uncomment this section
-    // let finalNegativePrompt = "no side profiles, blurry, low quality, distorted features, artificial artifacts";
-
     if (style === 'boudoir') {
       const boudoirConfig = styleConfigs.boudoir[gender as 'man' | 'woman'] || styleConfigs.boudoir.man;
       enhancedPrompt = `${prompt}, ${boudoirConfig.prompt}`;
-      // finalNegativePrompt = boudoirConfig.negativePrompt;
     } else {
       const styleConfig = styleConfigs[style as 'professional' | 'doctor'] || styleConfigs.professional;
       enhancedPrompt = `${prompt}, ${styleConfig.prompt}`;
-      // finalNegativePrompt = styleConfig.negativePrompt;
     }
-
-    // Use custom negative prompt if provided, otherwise use style default
-    // NOTE: Disabled for Flux models
-    // if (negative_prompt) {
-    //   finalNegativePrompt = negative_prompt;
-    // }
 
     // 🎨 CUSTOM PROMPT INJECTION
     // Add user's custom prompt text if provided
@@ -115,10 +95,10 @@ export async function generateImageHandler(
       console.log("🎨 Custom prompt added:", custom_prompt);
     }
 
-    // 🤖 GEMINI 2.5 FLASH ENHANCEMENT
+    // 🤖 GEMINI 2.0 FLASH ENHANCEMENT
     // Enhance prompt with Google Gemini if API key is available
     if (isGeminiAvailable()) {
-      console.log("🤖 Gemini 2.5 Flash available - enhancing prompt...");
+      console.log("🤖 Gemini available - enhancing prompt...");
       const geminiResult = await enhancePromptWithGemini(enhancedPrompt, style, gender);
 
       if (geminiResult.wasEnhanced) {
@@ -133,87 +113,114 @@ export async function generateImageHandler(
       console.log("ℹ️ Gemini API not configured - using style-based prompts only");
     }
 
-    // 🔑 CRITICAL FIX: Add trigger word for Flux models
-    // Flux models require "ohwx {gender}" at the start of the prompt
-    const triggerWord = `ohwx ${gender}`;
-    const finalPrompt = `${triggerWord} ${enhancedPrompt}`;
+    // Final prompt for Gemini image generation
+    const finalPrompt = enhancedPrompt;
+    const finalNegativePrompt = negative_prompt || "blurry, low quality, distorted features, artificial artifacts, side profiles";
 
-    console.log("🍌 Using nano banana generation model (Flux)");
-    console.log("🔑 Trigger word:", triggerWord);
+    console.log("🖼️ Using Gemini image generation");
     console.log("🎨 Final prompt:", finalPrompt);
-    console.log("ℹ️ Note: Flux models don't support negative prompts");
+    console.log("🚫 Negative prompt:", finalNegativePrompt);
 
-    // Call Astria API to generate images with nano banana model
-    const response = await fetch(`https://api.astria.ai/tunes/${astriaModelId}/prompts`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${astriaApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        prompt: {
-          text: finalPrompt,
-          // REMOVED: negative_prompt not supported on Flux models
-          num_images: num_images,
-          callback: `${supabaseUrl}/functions/v1/astria-webhook`,
-          // Nano banana generation parameters
-          w: 768,
-          h: 1024,
-          steps: 25,
-          cfg_scale: 3, // FIXED: Changed from 7 to 3 (Flux requires <5)
-          seed: -1,
-          controlnet: "canny",
-          controlnet_conditioning_scale: 0.8,
-          controlnet_txt2img: true,
-          use_lpw: true,
-          use_upscaler: true,
-          upscaler_strength: 0.1,
-          super_resolution: true,
-          // Enable nano banana model
-          face_correct: true,
-          face_swap: false,
-          inpaint_faces: true,
-          restore_faces: true,
-          // Nano banana specific optimizations
-          hires_fix: true,
-          enable_attention_slicing: true,
-          enable_vae_slicing: true,
-          // Force nano banana backend selection
-          backend: "nano-banana",
-          model_type: "nano-banana-v2"
-        },
-      }),
-    });
+    // Generate images using Gemini API
+    const generatedImages: Array<{ url: string; prompt: string }> = [];
+    const imageRecords: Array<{
+      model_id: string | null;
+      user_id: string;
+      prompt: string;
+      status: string;
+      gemini_image_id?: string;
+    }> = [];
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("❌ Astria API error:", response.status, errorText);
-      return new Response(
-        JSON.stringify({ error: "Failed to generate images", details: errorText }),
-        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    // Generate each image individually (Gemini API generates one at a time)
+    for (let i = 0; i < num_images; i++) {
+      console.log(`🖼️ Generating image ${i + 1}/${num_images}...`);
+
+      // Call Gemini image generation API
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: finalPrompt
+                  }
+                ]
+              }
+            ],
+            generationConfig: {
+              temperature: 0.8,
+              maxOutputTokens: 8192,
+              topP: 0.95,
+              topK: 40
+            },
+            // Gemini image generation specific config
+            responseModalities: ["image", "text"]
+          })
+        }
       );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ Gemini API error for image ${i + 1}:`, response.status, errorText);
+        continue; // Skip this image but continue with others
+      }
+
+      const data = await response.json();
+      console.log(`✅ Gemini image ${i + 1} generated:`, data);
+
+      // Extract image from Gemini response
+      // Gemini returns images as base64 in the response
+      let imageUrl = "";
+      const imageData = data.candidates?.[0]?.content?.parts?.[0];
+
+      if (imageData?.inlineData?.data) {
+        // Convert base64 to data URL
+        const base64Image = imageData.inlineData.data;
+        const mimeType = imageData.inlineData.mimeType || "image/png";
+        imageUrl = `data:${mimeType};base64,${base64Image}`;
+        
+        generatedImages.push({
+          url: imageUrl,
+          prompt: finalPrompt
+        });
+
+        imageRecords.push({
+          model_id: model_id || null,
+          user_id: user.id,
+          prompt: prompt,
+          status: "completed",
+          gemini_image_id: `gemini_${Date.now()}_${i}`
+        });
+      } else {
+        // No image in response - may need to handle differently
+        console.warn(`⚠️ No image data in Gemini response for image ${i + 1}`);
+        
+        // Still create a record but mark as failed
+        imageRecords.push({
+          model_id: model_id || null,
+          user_id: user.id,
+          prompt: prompt,
+          status: "failed"
+        });
+      }
     }
 
-    const astriaData = await response.json();
-    console.log("✅ Astria image generation started:", astriaData);
+    // If we have images to save, insert them
+    if (imageRecords.length > 0) {
+      const { data: dbImages, error: imagesError } = await supabase
+        .from("images")
+        .insert(imageRecords)
+        .select();
 
-    // Create image records in database
-    // Note: model_id may be null since we're using configured default tune_id
-    const imageRecords = Array.from({ length: num_images }, (_, i) => ({
-      model_id: model_id || null, // Use null if no database model_id provided
-      user_id: user.id,
-      prompt: prompt,
-      status: "generating",
-      astria_image_id: astriaData.images?.[i]?.id || null,
-    }));
-
-    const { data: dbImages, error: imagesError } = await supabase
-      .from("images")
-      .insert(imageRecords)
-      .select();
-
-    if (imagesError) {
-      console.error("❌ Database error saving images:", imagesError);
+      if (imagesError) {
+        console.error("❌ Database error saving images:", imagesError);
+      }
     }
 
     // Deduct credits
@@ -229,9 +236,9 @@ export async function generateImageHandler(
     return new Response(
       JSON.stringify({ 
         success: true, 
-        images: dbImages, 
-        astriaPrompt: astriaData,
-        credits_remaining: credits.credits - num_images 
+        images: generatedImages,
+        credits_remaining: credits.credits - num_images,
+        generation_mode: "gemini"
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
