@@ -63,21 +63,27 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          model_id: string | null
           prompt: string | null
+          status: string | null
           url: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
+          model_id?: string | null
           prompt?: string | null
+          status?: string | null
           url?: string | null
           user_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
+          model_id?: string | null
           prompt?: string | null
+          status?: string | null
           url?: string | null
           user_id?: string | null
         }
@@ -85,6 +91,7 @@ export type Database = {
       }
       models: {
         Row: {
+          astria_model_id: number | null
           created_at: string | null
           id: string
           name: string | null
@@ -93,6 +100,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          astria_model_id?: number | null
           created_at?: string | null
           id?: string
           name?: string | null
@@ -101,6 +109,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          astria_model_id?: number | null
           created_at?: string | null
           id?: string
           name?: string | null
@@ -143,6 +152,9 @@ export type Database = {
       samples: {
         Row: {
           created_at: string | null
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
           id: string
           model_id: string | null
           url: string | null
@@ -150,6 +162,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
           id?: string
           model_id?: string | null
           url?: string | null
@@ -157,6 +172,9 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
           id?: string
           model_id?: string | null
           url?: string | null
