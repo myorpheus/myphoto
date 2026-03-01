@@ -22,6 +22,32 @@ import AuthRoute from "./components/AuthRoute";
 
 const queryClient = new QueryClient();
 
+// Apply saved OG & favicon settings on app load
+const applySavedBranding = () => {
+  try {
+    const stored = localStorage.getItem('admin_og_settings');
+    if (!stored) return;
+    const s = JSON.parse(stored);
+    const setMeta = (property: string, content: string) => {
+      if (!content) return;
+      let el = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
+      if (!el) { el = document.createElement('meta'); el.setAttribute('property', property); document.head.appendChild(el); }
+      el.setAttribute('content', content);
+    };
+    setMeta('og:title', s.ogTitle);
+    setMeta('og:description', s.ogDescription);
+    setMeta('og:image', s.ogImage);
+    setMeta('og:url', s.ogUrl);
+    if (s.ogTitle) document.title = s.ogTitle;
+    if (s.favicon) {
+      const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement || document.createElement('link');
+      link.rel = 'icon'; link.href = s.favicon;
+      if (!document.querySelector("link[rel~='icon']")) document.head.appendChild(link);
+    }
+  } catch (e) { console.error('Failed to apply branding:', e); }
+};
+applySavedBranding();
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="system" storageKey="headshots-ai-theme">
