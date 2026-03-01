@@ -137,21 +137,21 @@ export type Database = {
       user_roles: {
         Row: {
           created_at: string | null
-          id: number
+          id: string
           role: string
-          user_id: number
+          user_id: string
         }
         Insert: {
           created_at?: string | null
-          id?: number
-          role: string
-          user_id: number
+          id?: string
+          role?: string
+          user_id: string
         }
         Update: {
           created_at?: string | null
-          id?: number
+          id?: string
           role?: string
-          user_id?: number
+          user_id?: string
         }
         Relationships: []
       }
@@ -160,7 +160,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

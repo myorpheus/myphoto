@@ -4,6 +4,8 @@ import { Users, Shield, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+const db = supabase as any;
+
 interface AnalyticsProps {
   userRoles: string[];
 }
@@ -30,16 +32,16 @@ const Analytics: React.FC<AnalyticsProps> = ({ userRoles }) => {
         .select('*', { count: 'exact', head: true });
 
       // Load events count
-      const { count: eventCount } = await supabase
+      const { count: eventCount } = await db
         .from('events')
         .select('*', { count: 'exact', head: true });
 
       // Load total revenue from creator balances
-      const { data: balances } = await supabase
+      const { data: balances } = await db
         .from('creator_balances')
         .select('total_earned');
 
-      const totalRevenue = balances?.reduce((sum, b) => sum + (b.total_earned || 0), 0) || 0;
+      const totalRevenue = balances?.reduce((sum: number, b: any) => sum + (b.total_earned || 0), 0) || 0;
 
       setStats({
         totalUsers: userCount || 0,

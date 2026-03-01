@@ -66,7 +66,7 @@ export const useHeadshotGenerator = (): UseHeadshotGeneratorReturn => {
       }
 
       const credits = await headshotGeneratorService.getUserCredits(user.id);
-      if (role === 'super_admin' || role === 'admin') { setUserCredits(999999); } else { setUserCredits(credits); }
+      setUserCredits(credits);
 
       // Load saved custom prompt
       const savedPrompt = await headshotGeneratorService.getCustomPrompt(user.id);

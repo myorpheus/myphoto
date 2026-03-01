@@ -242,7 +242,7 @@ export class HeadshotGeneratorService {
    */
   async saveCustomPrompt(userId: string, customPrompt: string): Promise<boolean> {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('profiles')
         .update({ custom_astria_prompt: customPrompt })
         .eq('id', userId);
@@ -264,7 +264,7 @@ export class HeadshotGeneratorService {
    */
   async getCustomPrompt(userId: string): Promise<string | null> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('profiles')
         .select('custom_astria_prompt')
         .eq('id', userId)
