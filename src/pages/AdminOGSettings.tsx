@@ -72,18 +72,40 @@ const AdminOGSettings = () => {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        setSettings(prev => ({ ...prev, ...parsed }));
+        setSettings(prev => {
+          const merged = { ...prev, ...parsed };
+          return merged;
+        });
         if (parsed.ogImage?.startsWith('data:')) setImageSource('upload');
         if (parsed.favicon?.startsWith('data:')) setFaviconSource('upload');
       }
     } catch (error) { console.error('Error loading settings:', error); }
   };
 
+  const applyOGMetaTags = (s: OGSettings) => {
+    const setMeta = (property: string, content: string) => {
+      if (!content) return;
+      let el = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute('property', property);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', content);
+    };
+    setMeta('og:title', s.ogTitle);
+    setMeta('og:description', s.ogDescription);
+    setMeta('og:image', s.ogImage);
+    setMeta('og:url', s.ogUrl);
+    if (s.ogTitle) document.title = s.ogTitle;
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-      toast({ title: 'Settings Saved', description: 'OG & Favicon settings saved successfully' });
+      applyOGMetaTags(settings);
+      toast({ title: 'Settings Saved', description: 'OG & Favicon settings have been saved and applied!' });
     } catch (error) {
       console.error('Error saving settings:', error);
       toast({ title: 'Error', description: 'Failed to save settings', variant: 'destructive' });

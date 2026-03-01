@@ -60,3 +60,8 @@
 - Favicon applied dynamically to `<link rel="icon">` on save
 - Settings stored in localStorage alongside OG settings
 - Component remains under 350 lines
+
+### 9. Fixed Save Settings - OG Meta Tags Application
+- Save button now applies OG meta tags (`og:title`, `og:description`, `og:image`, `og:url`) to `<head>` on save
+- Added global branding initializer in `App.tsx` to apply saved OG & favicon settings on every page load
+- Settings persist across sessions via localStorage and are applied automatically
