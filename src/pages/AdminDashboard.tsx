@@ -63,7 +63,7 @@ const AdminDashboard = () => {
               {t("common.back")}
             </Button>
             <h1 className="text-2xl font-bold">{t("admin.title")}</h1>
-            {userRoles.includes('super_admin') && (
+            {userRoles.includes('super_admin') || userRoles.includes('admin') && (
               <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded">
                 {t("admin.superAdmin")}
               </span>
@@ -128,7 +128,7 @@ const AdminDashboard = () => {
           <TabsList>
             <TabsTrigger value="overview">{t("admin.overview")}</TabsTrigger>
             <TabsTrigger value="users">{t("admin.users")}</TabsTrigger>
-            {userRoles.includes('super_admin') && (
+            {userRoles.includes('super_admin') || userRoles.includes('admin') && (
               <TabsTrigger value="settings">
                 <SettingsIcon className="w-4 h-4 mr-2" />
                 {t("admin.settings")}
@@ -141,7 +141,7 @@ const AdminDashboard = () => {
           <TabsContent value="users" className="space-y-4">
             <UserManagement userRoles={userRoles} />
           </TabsContent>
-          {userRoles.includes('super_admin') && (
+          {userRoles.includes('super_admin') || userRoles.includes('admin') && (
             <TabsContent value="settings" className="space-y-4">
               <Settings userRoles={userRoles} />
             </TabsContent>
