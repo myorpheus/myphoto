@@ -9,7 +9,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { 
-  Camera, Sparkles, Image, Crown, GalleryHorizontal, LogOut, ArrowRight, Coins, User, Settings
+  Camera, Sparkles, Image, Crown, LogOut, ArrowRight, Coins, User, Settings
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Footer from "@/components/Footer";
@@ -66,7 +66,7 @@ const Home = () => {
       title: t("home.viewGallery"),
       description: t("home.viewGalleryDesc"),
       icon: Image,
-      action: () => navigate('/home'),
+      action: () => navigate('/overview'),
       gradient: "from-primary/80 to-accent/80",
     }
   ];
@@ -98,10 +98,6 @@ const Home = () => {
               <Coins className="h-4 w-4 text-primary" />
               <span className="font-semibold text-sm">{userCredits} {t("common.credits")}</span>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/gallery")} className="flex items-center gap-2">
-              <GalleryHorizontal className="h-4 w-4" />
-              {t("common.gallery")}
-            </Button>
             <LanguageSelector />
             <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={handleSignOut} className="hover:bg-destructive/10 hover:text-destructive transition-colors">
@@ -190,7 +186,7 @@ const Home = () => {
               <CardDescription>{t("home.managePreferences")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/home')}>
+              <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/overview')}>
                 <Settings className="mr-2 h-4 w-4" />
                 {t("home.viewDashboard")}
               </Button>
