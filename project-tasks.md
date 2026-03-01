@@ -33,3 +33,9 @@
 - Uploaded images stored as data URLs in localStorage (no storage bucket needed)
 - Includes file validation (images only, max 5MB), preview with remove button
 - Component stays under 350 lines
+
+### 6. Fixed Admin Panel "No Users" Bug
+- Root cause: `profiles` table had RLS enabled with zero policies (blocked all reads); `user_roles` only allowed reading own roles
+- Added RLS policies: admins/super_admins can read all profiles and all user_roles; super_admins can manage roles
+- Fixed `getAllUsers()` in `userService.ts`: removed reference to non-existent `email` column, replaced `!inner` join with separate queries to avoid FK issues
+- Users now display with `full_name` or `username` as identifier
