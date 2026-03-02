@@ -103,7 +103,7 @@ export function NewsCarousel() {
 
             <div className="text-center mt-12">
               <Button asChild variant="ghost" size="lg" className="group text-lg hover:bg-primary/10">
-                <Link to="#">View All Articles <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" /></Link>
+                <Link to="/blog">View All Articles <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" /></Link>
               </Button>
             </div>
           </>
@@ -134,7 +134,7 @@ function NewsCard({ article, isActive, formatDate }: NewsCardProps) {
         <h3 className="text-2xl font-bold mb-3 line-clamp-2 group-hover:text-primary transition-colors duration-300">{article.title}</h3>
         <p className="text-muted-foreground line-clamp-2 mb-6">{article.excerpt}</p>
         <Button asChild variant="outline" className="w-full border-primary/30 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all duration-300 group/btn">
-          <Link to="#">Read Article <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" /></Link>
+          <Link to={`/blog/${article.id}`}>Read Article <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform" /></Link>
         </Button>
       </div>
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">

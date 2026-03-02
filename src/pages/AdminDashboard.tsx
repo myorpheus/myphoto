@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabaseService } from '@/services/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Settings as SettingsIcon, Camera, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Settings as SettingsIcon, Camera, ArrowRight, Newspaper, Layout } from 'lucide-react';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { useTranslation } from '@/contexts/LanguageContext';
 import Analytics from '@/components/Analytics';
@@ -103,6 +103,38 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <Button variant="ghost" className="w-full justify-between group/btn hover:bg-primary/10" onClick={() => navigate('/admin-og')}>
+                  {t("admin.accessTool")}
+                  <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="group cursor-pointer hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 border-border hover:border-primary/50">
+              <CardHeader>
+                <div className="w-14 h-14 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <Newspaper className="h-7 w-7 text-blue-600 dark:text-blue-400" />
+                </div>
+                <CardTitle className="group-hover:text-primary transition-colors">News Articles</CardTitle>
+                <CardDescription>Manage blog posts and news articles</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="ghost" className="w-full justify-between group/btn hover:bg-primary/10" onClick={() => navigate('/admin/news')}>
+                  {t("admin.accessTool")}
+                  <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="group cursor-pointer hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 border-border hover:border-primary/50">
+              <CardHeader>
+                <div className="w-14 h-14 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <Layout className="h-7 w-7 text-purple-600 dark:text-purple-400" />
+                </div>
+                <CardTitle className="group-hover:text-primary transition-colors">Templates</CardTitle>
+                <CardDescription>Manage headshot showcase templates</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="ghost" className="w-full justify-between group/btn hover:bg-primary/10" onClick={() => navigate('/admin/templates')}>
                   {t("admin.accessTool")}
                   <ArrowRight className="h-4 w-4 group-hover/btn:translate-x-1 transition-transform" />
                 </Button>
