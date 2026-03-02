@@ -60,7 +60,8 @@ export default {
       },
       fontFamily: {
         satoshi: ["Satoshi", "sans-serif"],
-        sans: ["Satoshi", "sans-serif"],
+        sans: ["Plus Jakarta Sans", "Satoshi", "sans-serif"],
+        display: ["Sora", "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",
