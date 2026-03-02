@@ -7,6 +7,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { supabaseService } from "@/services/supabase";
+import { NewsCarousel } from "@/components/landing/NewsCarousel";
+import { HeadshotShowcase } from "@/components/landing/HeadshotShowcase";
 
 const Index = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -125,6 +127,9 @@ const Index = () => {
           </div>
         </section>
 
+        {/* Headshot Showcase */}
+        <HeadshotShowcase />
+
         {/* Features Section */}
         <section id="features" className="container px-4 py-20 md:px-6 md:py-32">
           <div className="max-w-6xl mx-auto">
@@ -163,6 +168,9 @@ const Index = () => {
             </div>
           </div>
         </section>
+
+        {/* News Carousel */}
+        <NewsCarousel />
 
         {/* CTA Section */}
         <section className="container px-4 py-20 md:px-6 md:py-32">
