@@ -17,6 +17,9 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminOGSettings from "./pages/AdminOGSettings";
 import HeadshotGenerator from "./pages/HeadshotGenerator";
 import Gallery from "./pages/Gallery";
+import BlogArticle from "./pages/BlogArticle";
+import AdminNews from "./pages/AdminNews";
+import AdminTemplates from "./pages/AdminTemplates";
 import AdminRoute from "./components/admin/AdminRoute";
 import AuthRoute from "./components/AuthRoute";
 
@@ -76,6 +79,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/blog/:id" element={<BlogArticle />} />
             <Route path="/login" element={<Login />} />
             <Route path="/home" element={
               <AuthRoute>
@@ -123,6 +127,22 @@ const App = () => (
               element={
                 <AdminRoute>
                   <AdminPhotos />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/news" 
+              element={
+                <AdminRoute>
+                  <AdminNews />
+                </AdminRoute>
+              } 
+            />
+            <Route 
+              path="/admin/templates" 
+              element={
+                <AdminRoute>
+                  <AdminTemplates />
                 </AdminRoute>
               } 
             />
