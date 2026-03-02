@@ -119,6 +119,48 @@ export type Database = {
         }
         Relationships: []
       }
+      news_articles: {
+        Row: {
+          author: string
+          category: string
+          content: string
+          created_at: string
+          excerpt: string
+          id: string
+          image_url: string
+          is_published: boolean
+          published_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author?: string
+          category?: string
+          content?: string
+          created_at?: string
+          excerpt?: string
+          id?: string
+          image_url?: string
+          is_published?: boolean
+          published_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author?: string
+          category?: string
+          content?: string
+          created_at?: string
+          excerpt?: string
+          id?: string
+          image_url?: string
+          is_published?: boolean
+          published_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           appsource: string | null
@@ -232,6 +274,45 @@ export type Database = {
           updated_at?: string | null
           updated_by?: string | null
           value?: Json
+        }
+        Relationships: []
+      }
+      templates: {
+        Row: {
+          color_from: string
+          color_to: string
+          display_order: number
+          generated_image_url: string | null
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          name_ru: string
+          name_zh: string
+        }
+        Insert: {
+          color_from?: string
+          color_to?: string
+          display_order?: number
+          generated_image_url?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          name_ru?: string
+          name_zh?: string
+        }
+        Update: {
+          color_from?: string
+          color_to?: string
+          display_order?: number
+          generated_image_url?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_ru?: string
+          name_zh?: string
         }
         Relationships: []
       }
